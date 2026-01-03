@@ -16,13 +16,14 @@ export const Categories = {
     },
     IDP: {
         name: "Password",
-        emoji: "<:MekoFun:1379102025869951119",
+        emoji: "<:MekoFun:1379102025869951119>",
         description: "IDP management commands"
     },
     ONLYDEVS: {
         name: "Developer",
         emoji: "👨‍💻",
-        description: "Bot developer only commands"
+        description: "Bot developer only commands",
+        hideInHelp: true
     },
 };
 

@@ -207,36 +207,9 @@ async function getHelpMenu({ client, guild, user, prefix = "!" }) {
         .addOptions(options)
     );
 
-    const buttons = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("homeBtn")
-        .setEmoji("<:MekoHome:1379102008623104080>")
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(true),
-      new ButtonBuilder()
-        .setCustomId("backBtn")
-        .setEmoji("<:left:1412094230998028471>")
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(true),
-      new ButtonBuilder()
-        .setCustomId("quitBtn")
-        .setEmoji("<:disable:1379321477769203724>")
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId("nextBtn")
-        .setEmoji("<:right:1412094177457737729>")
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(false),
-      new ButtonBuilder()
-        .setCustomId("lastBtn")
-        .setLabel("Last")
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(false)
-    );
-
     return {
       embeds: [embed],
-      components: [dropdown, buttons],
+      components: [dropdown],
     };
   } catch (error) {
     console.error("getHelpMenu error:", error);
@@ -414,40 +387,6 @@ async function createHelpView(message, userId, prefix) {
     // Initialize
     await generateEmbeds();
 
-    async function updateButtons() {
-      const isFirst = currentIndex === 0;
-      const isLast = currentIndex === embeds.length - 1;
-
-      const buttons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("homeBtn")
-          .setEmoji("<:MekoHome:1379102008623104080>")
-          .setStyle(isFirst ? ButtonStyle.Primary : ButtonStyle.Secondary)
-          .setDisabled(isFirst),
-        new ButtonBuilder()
-          .setCustomId("backBtn")
-          .setEmoji("<:left:1412094230998028471>")
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(isFirst),
-        new ButtonBuilder()
-          .setCustomId("quitBtn")
-          .setEmoji("<:disable:1379321477769203724>")
-          .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-          .setCustomId("nextBtn")
-          .setEmoji("<:right:1412094177457737729>")
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(isLast),
-        new ButtonBuilder()
-          .setCustomId("lastBtn")
-          .setLabel("Last")
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(isLast)
-      );
-
-      return buttons;
-    }
-
     collector.on("collect", async (interaction) => {
       try {
         if (interaction.user.id !== userId) {
@@ -470,50 +409,17 @@ async function createHelpView(message, userId, prefix) {
           return;
         }
 
-        switch (interaction.customId) {
-          case "help-menu":
-            const selectedValue = interaction.values[0];
-            if (selectedValue === "HOME") {
-              currentIndex = 0;
-            } else {
-              const index = options.findIndex(
-                (opt) => opt.value === selectedValue
-              );
-              if (index !== -1) currentIndex = index;
-            }
-            break;
-
-          case "homeBtn":
+        // Handle dropdown selection
+        if (interaction.customId === "help-menu") {
+          const selectedValue = interaction.values[0];
+          if (selectedValue === "HOME") {
             currentIndex = 0;
-            break;
-
-          case "backBtn":
-            if (currentIndex > 0) currentIndex--;
-            break;
-
-          case "nextBtn":
-            if (currentIndex < embeds.length - 1) currentIndex++;
-            break;
-
-          case "lastBtn":
-            currentIndex = embeds.length - 1;
-            break;
-
-          case "quitBtn":
-            const closedEmbed = new EmbedBuilder()
-              .setDescription("❌ **Help menu closed.**")
-              .setColor(Colors.Red);
-
-            try {
-              await message.edit({
-                embeds: [closedEmbed],
-                components: [],
-              });
-            } catch (editError) {
-              console.log("Failed to edit message on quit:", editError.message);
-            }
-            collector.stop();
-            return;
+          } else {
+            const index = options.findIndex(
+              (opt) => opt.value === selectedValue
+            );
+            if (index !== -1) currentIndex = index;
+          }
         }
 
         // Update embed
@@ -537,7 +443,7 @@ async function createHelpView(message, userId, prefix) {
           try {
             await message.edit({
               embeds: [currentEmbed],
-              components: [dropdown, await updateButtons()],
+              components: [dropdown],
             });
           } catch (editError) {
             console.log("Failed to edit help message:", editError.message);
