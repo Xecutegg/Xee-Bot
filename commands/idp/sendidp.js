@@ -7,6 +7,7 @@ export default {
     botPermissions: ['ManageGuild'],
     category: 'idp',
     description: 'Set up an IDP (Interactive Data Panel)',
+    aliases: ["idps"],
     usage: 'idp-setup',
     async execute(client, message, args) {
 
