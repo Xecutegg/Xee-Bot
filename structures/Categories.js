@@ -1,22 +1,22 @@
 export const Categories = {
     INFO: {
         name: "Info",
-        emoji: "ℹ️",
+        emoji: "<:info:1365651847435522098>",
         description: "Information and statistics commands"
     },
     MOD: {
         name: "Moderation",
-        emoji: "🛡️",
+        emoji: "<:MOD:1379449164919734353>",
         description: "Server moderation commands"
     },
     UTILS: {
         name: "Utility",
-        emoji: "🔧",
+        emoji: "<:MekoAutomod:1379102013882892331>",
         description: "Utility and helper commands"
     },
     IDP: {
-        name: "IDP",
-        emoji: "🎮",
+        name: "Password",
+        emoji: "<:MekoFun:1379102025869951119",
         description: "IDP management commands"
     },
     ONLYDEVS: {
@@ -24,11 +24,6 @@ export const Categories = {
         emoji: "👨‍💻",
         description: "Bot developer only commands"
     },
-    EVENTS: {
-        name: "Events",
-        emoji: "📅",
-        description: "Event handling"
-    }
 };
 
 export function getCategoryInfo(category) {

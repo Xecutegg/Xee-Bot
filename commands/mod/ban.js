@@ -393,7 +393,7 @@ export default {
         const dmEmbed = new EmbedBuilder()
           .setColor(config.EMBED_COLORS.ERROR)
           .setDescription(
-            `You have been banned from **${message.guild.name}** by **${message.author.username}**`
+            `You have been banned from **${interaction.guild.name}** by **${interaction.user.username}**`
           );
 
         await targetUser.send({ embeds: [dmEmbed] });

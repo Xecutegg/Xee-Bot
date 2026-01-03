@@ -64,6 +64,15 @@ export default {
     try {
       const guildSettings = await getSettings(message.guild);
 
+      // Initialize max_warn if it doesn't exist
+      if (!guildSettings.max_warn) {
+        guildSettings.max_warn = {
+          limit: 3,
+          action: "TIMEOUT"
+        };
+        await guildSettings.save();
+      }
+
       // If no arguments, show current configuration
       if (!args.length) {
         const configEmbed = this.createConfigEmbed(

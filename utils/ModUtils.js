@@ -5,92 +5,112 @@ import config from "../config.js";
 
 /**
  * Warn a target user
- * @param {object} interaction - Discord interaction or message
- * @param {object} target - Target user to warn
+ * @param {object} issuer - Discord member who issued the warning
+ * @param {object} target - Target member to warn
  * @param {string} reason - Reason for warning
  * @param {object} client - Discord client
- * @returns {object} - Embed response
+ * @returns {object} - Response object with warning details
  */
-export async function warnTarget(interaction, target, reason, client) {
+export async function warnTarget(issuer, target, reason, client) {
     try {
-        const guildId = interaction.guild.id;
-        const member = await getMember(guildId, target.id);
+        // Check if target is a bot
+        if (target.user.bot) {
+            return "BOT_WARN";
+        }
+
+        // Check if issuer is warning themselves
+        if (issuer.id === target.id) {
+            return "SELF_WARN";
+        }
+
+        // Check role hierarchy
+        if (target.roles.highest.position >= issuer.roles.highest.position &&
+            issuer.guild.ownerId !== issuer.id) {
+            return "MEMBER_PERM";
+        }
+
+        const guildId = issuer.guild.id;
         const settings = await getSettings(guildId);
 
-        // Add warning
+        // Initialize max_warn if it doesn't exist
+        if (!settings.max_warn) {
+            settings.max_warn = {
+                limit: 3,
+                action: "TIMEOUT"
+            };
+            await settings.save();
+        }
+
+        // Add warning to database
         const moderatorInfo = {
-            id: interaction.user?.id || interaction.author.id,
-            username: interaction.user?.username || interaction.author.username
+            id: issuer.user?.id || issuer.id,
+            username: issuer.user?.username || issuer.displayName
         };
 
         await addWarning(guildId, target.id, reason || "No reason provided", moderatorInfo);
 
         // Get updated member data
         const updatedMember = await getMember(guildId, target.id);
-        const warningCount = updatedMember.warnings;
+        const warningCount = updatedMember.warnings || 1;
+        const maxWarnings = settings.max_warn.limit || 3;
 
-        // Check for automated actions
+        // Check if max warnings reached and take action
         let actionTaken = null;
-        if (settings.warnings?.actions?.length > 0) {
-            const matchingAction = settings.warnings.actions
-                .sort((a, b) => b.count - a.count)
-                .find(action => warningCount >= action.count);
+        if (warningCount >= maxWarnings) {
+            try {
+                const action = settings.max_warn.action || "TIMEOUT";
 
-            if (matchingAction) {
-                const targetMember = interaction.guild.members.cache.get(target.id);
-                if (targetMember) {
-                    try {
-                        switch (matchingAction.action) {
-                            case 'timeout':
-                                await targetMember.timeout(matchingAction.duration || 3600000, `${warningCount} warnings reached`);
-                                actionTaken = `Timed out for ${Math.floor((matchingAction.duration || 3600000) / 60000)} minutes`;
-                                break;
-                            case 'kick':
-                                await targetMember.kick(`${warningCount} warnings reached`);
-                                actionTaken = 'Kicked from server';
-                                break;
-                            case 'ban':
-                                await targetMember.ban({ reason: `${warningCount} warnings reached` });
-                                actionTaken = 'Banned from server';
-                                break;
-                        }
-                    } catch (err) {
-                        console.error('Error applying warning action:', err);
-                    }
+                switch (action.toUpperCase()) {
+                    case 'TIMEOUT':
+                        await target.timeout(24 * 60 * 60 * 1000, `Reached maximum warnings (${warningCount})`);
+                        actionTaken = {
+                            success: true,
+                            action: 'timed out',
+                            duration: '24 hours'
+                        };
+                        break;
+                    case 'KICK':
+                        await target.kick(`Reached maximum warnings (${warningCount})`);
+                        actionTaken = {
+                            success: true,
+                            action: 'kicked'
+                        };
+                        break;
+                    case 'BAN':
+                        await target.ban({ reason: `Reached maximum warnings (${warningCount})` });
+                        actionTaken = {
+                            success: true,
+                            action: 'banned'
+                        };
+                        break;
                 }
+            } catch (err) {
+                console.error('Error applying warning action:', err);
+                actionTaken = {
+                    success: false,
+                    error: err.message
+                };
             }
-        }
-
-        // Create response embed
-        const embed = new EmbedBuilder()
-            .setColor(config.EMBED_COLORS?.WARNING || 0xffa500)
-            .setTitle('⚠️ Warning Issued')
-            .setDescription(`**${target.tag}** has been warned`)
-            .addFields(
-                { name: 'Reason', value: reason || 'No reason provided', inline: false },
-                { name: 'Total Warnings', value: `${warningCount}`, inline: true },
-                { name: 'Moderator', value: `${interaction.user?.tag || interaction.author.tag}`, inline: true }
-            )
-            .setTimestamp();
-
-        if (actionTaken) {
-            embed.addFields({ name: 'Action Taken', value: actionTaken, inline: false });
         }
 
         // Try to DM the user
         try {
+            let dmDescription = `You have been warned in **${issuer.guild.name}**\n\n`;
+            dmDescription += `**Reason:** ${reason || 'No reason provided'}\n`;
+            dmDescription += `**Total Warnings:** ${warningCount}/${maxWarnings}`;
+
             const dmEmbed = new EmbedBuilder()
                 .setColor(config.EMBED_COLORS?.WARNING || 0xffa500)
                 .setTitle('⚠️ You have been warned')
-                .setDescription(`You have been warned in **${interaction.guild.name}**`)
-                .addFields(
-                    { name: 'Reason', value: reason || 'No reason provided', inline: false },
-                    { name: 'Total Warnings', value: `${warningCount}`, inline: true }
-                )
+                .setDescription(dmDescription)
                 .setTimestamp();
 
-            if (actionTaken) {
-                dmEmbed.addFields({ name: 'Action Taken', value: actionTaken, inline: false });
+            if (actionTaken && actionTaken.success) {
+                dmEmbed.addFields({
+                    name: '**Action Taken**',
+                    value: `You have been **${actionTaken.action}** for reaching the maximum number of warnings.`,
+                    inline: false
+                });
             }
 
             await target.send({ embeds: [dmEmbed] });
@@ -98,9 +118,17 @@ export async function warnTarget(interaction, target, reason, client) {
             // User has DMs disabled
         }
 
-        return embed;
+        return {
+            success: true,
+            warnings: warningCount,
+            maxWarnings: maxWarnings,
+            actionTaken: actionTaken
+        };
     } catch (error) {
         console.error('Error in warnTarget:', error);
-        throw error;
+        return {
+            success: false,
+            error: error.message
+        };
     }
 }
