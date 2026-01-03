@@ -126,7 +126,7 @@ export default {
           const errorEmbed = new EmbedBuilder()
             .setColor(config.EMBED_COLORS.ERROR)
             .setDescription(
-              "You cannot ban a user with equal or higher role than you."
+              "tera and uska role same h nhi ban de sakta hu usko lawde!."
             );
 
           return message.reply({ embeds: [errorEmbed] });
