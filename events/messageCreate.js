@@ -45,7 +45,7 @@ export default {
 
                 if (missingPerms.length > 0) {
                     return message.reply({
-                        content: `❌ You need the following permissions: ${missingPerms.join(', ')}`,
+                        content: `${config.cross_emoji} | Chup Lawde Teri ma ki chut perms le kr aa ye wala \`${missingPerms.join(', ')}\``,
                         flags: 64
                     });
                 }
@@ -62,7 +62,7 @@ export default {
                     if (now < expirationTime) {
                         const timeLeft = ((expirationTime - now) / 1000).toFixed(1);
                         return message.reply({
-                            content: `⏱️ Please wait ${timeLeft}s before using this command again.`,
+                            content: `⏱ Please wait ${timeLeft}s before using this command again.`,
                             flags: 64
                         });
                     }

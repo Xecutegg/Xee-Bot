@@ -3,8 +3,8 @@ import Idp from '../../database/models/idp.js';
 
 export default {
     name: 'idp-setup',
-    userPermissions: ['ManageGuild'],
-    botPermissions: ['ManageGuild'],
+    userperms: ['ManageGuild'],
+    botperms: ['ManageGuild'],
     category: 'idp',
     description: 'Set up an IDP (Interactive Data Panel)',
     aliases: ["idps"],
