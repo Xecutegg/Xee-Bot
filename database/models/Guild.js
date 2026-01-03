@@ -84,29 +84,29 @@ export const updateSettings = async (guildId, data) => {
         return null;
     }
 };
-try {
-    return await Guild.find({ isPremium: true });
-} catch (error) {
-    console.error('Database error in getPremiumGuilds:', error.message);
-    return [];
-}
+
 /**
  * Get all premium guilds
  */
 export const getPremiumGuilds = async () => {
-    return await Guild.find({ isPremium: true });
+    try {
+        return await Guild.find({ isPremium: true });
+    } catch (error) {
+        console.error('Database error in getPremiumGuilds:', error.message);
+        return [];
+    }
 };
-try {
-    return await Guild.find({ updateChannelId: { $ne: null } });
-} catch (error) {
-    console.error('Database error in getGuildsWithUpdateChannel:', error.message);
-    return [];
-}
+
 /**
  * Get all guilds with update channel
  */
 export const getGuildsWithUpdateChannel = async () => {
-    return await Guild.find({ updateChannelId: { $ne: null } });
+    try {
+        return await Guild.find({ updateChannelId: { $ne: null } });
+    } catch (error) {
+        console.error('Database error in getGuildsWithUpdateChannel:', error.message);
+        return [];
+    }
 };
 
 export default Guild;

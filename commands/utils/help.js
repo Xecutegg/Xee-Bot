@@ -129,12 +129,10 @@ async function getHelpMenu({ client, guild, user, prefix = "!" }) {
 
     // Build features list with emojis and badges
     const featuresList = [
-      `${config.esports_emoji} | Esports Commands ${config.new_emoji}`,
       `${config.mod_emoji} | Moderation Commands`,
       `${config.utlis_emoji} | Utility Commands`,
       `${config.info_emoji} | Information Commands`,
-      `${config.verify_emoji} | Screenshot Verification`,
-      `${config.premium_emoji} | Premium Commands & Features`,
+      `${config.verify_emoji} | ID Password Management ${config.new_emoji}`,
     ];
 
     const embed = new EmbedBuilder()
