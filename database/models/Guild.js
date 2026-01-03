@@ -35,24 +35,36 @@ const Guild = model('Guild', guildSchema);
  * @param {string} guildId 
  */
 export const getSettings = async (guildId) => {
-    let guild = await Guild.findOne({ guildId });
-    if (!guild) {
-        guild = new Guild({
+    try {
+        let guild = await Guild.findOne({ guildId });
+        if (!guild) {
+            guild = new Guild({
+                guildId,
+                prefix: null,
+                isPremium: false,
+                modlog: {
+                    enabled: false,
+                    channelId: null
+                },
+                warnings: {
+                    maxWarnings: 3,
+                    actions: []
+                }
+            });
+            await guild.save();
+        }
+        return guild;
+    } catch (error) {
+        console.error('Database error in getSettings:', error.message);
+        // Return default settings if database fails
+        return {
             guildId,
             prefix: null,
             isPremium: false,
-            modlog: {
-                enabled: false,
-                channelId: null
-            },
-            warnings: {
-                maxWarnings: 3,
-                actions: []
-            }
-        });
-        await guild.save();
+            modlog: { enabled: false, channelId: null },
+            warnings: { maxWarnings: 3, actions: [] }
+        };
     }
-    return guild;
 };
 
 /**
@@ -61,20 +73,35 @@ export const getSettings = async (guildId) => {
  * @param {object} data 
  */
 export const updateSettings = async (guildId, data) => {
-    return await Guild.findOneAndUpdate(
-        { guildId },
-        { $set: data },
-        { new: true, upsert: true }
-    );
+    try {
+        return await Guild.findOneAndUpdate(
+            { guildId },
+            { $set: data },
+            { new: true, upsert: true }
+        );
+    } catch (error) {
+        console.error('Database error in updateSettings:', error.message);
+        return null;
+    }
 };
-
+try {
+    return await Guild.find({ isPremium: true });
+} catch (error) {
+    console.error('Database error in getPremiumGuilds:', error.message);
+    return [];
+}
 /**
  * Get all premium guilds
  */
 export const getPremiumGuilds = async () => {
     return await Guild.find({ isPremium: true });
 };
-
+try {
+    return await Guild.find({ updateChannelId: { $ne: null } });
+} catch (error) {
+    console.error('Database error in getGuildsWithUpdateChannel:', error.message);
+    return [];
+}
 /**
  * Get all guilds with update channel
  */
