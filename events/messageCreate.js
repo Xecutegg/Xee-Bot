@@ -1,4 +1,14 @@
 import config from '../config.js';
+import { getUser } from '../database/models/User.js';
+import {
+    MessageFlags,
+    TextDisplayBuilder,
+    ContainerBuilder,
+    SectionBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    ThumbnailBuilder,
+} from 'discord.js';
 
 const cooldowns = new Map();
 
@@ -8,12 +18,32 @@ export default {
         // Ignore bots and DMs
         if (message.author.bot || !message.guild) return;
 
-        // Check if message starts with prefix
-        if (!message.content.startsWith(config.prefix)) return;
+        // Check if bot is mentioned
+        if (message.mentions.has(client.user.id) && message.content.trim() === `<@${client.user.id}>`) {
+            return handleBotMention(message, client);
+        }
 
-        // Parse command and arguments
-        const args = message.content.slice(config.prefix.length).trim().split(/ +/);
-        const commandName = args.shift().toLowerCase();
+        // Get user data to check noPrefix status
+        const userDb = await getUser(message.author);
+        const hasNoPrefix = userDb?.noPrefix || false;
+
+        // Determine if message has prefix
+        const hasPrefix = message.content.startsWith(config.prefix);
+
+        // If user has noPrefix, allow both with and without prefix
+        // If user doesn't have noPrefix, require prefix
+        if (!hasNoPrefix && !hasPrefix) return;
+
+        // Parse command and arguments based on whether prefix is present
+        let args, commandName;
+        if (hasPrefix) {
+            args = message.content.slice(config.prefix.length).trim().split(/ +/);
+            commandName = args.shift().toLowerCase();
+        } else {
+            // No prefix case (only for noPrefix users)
+            args = message.content.trim().split(/ +/);
+            commandName = args.shift().toLowerCase();
+        }
 
         // Find command by name or alias
         const command = client.commands.get(commandName) ||
@@ -84,3 +114,85 @@ export default {
         }
     },
 };
+
+async function handleBotMention(message, client) {
+    try {
+        // Create invite button
+        const inviteButton = new ButtonBuilder()
+            .setLabel('Add to Server')
+            .setStyle(ButtonStyle.Link);
+
+        if (client.generateInvite) {
+            try {
+                const inviteLink = client.generateInvite({
+                    scopes: ['bot', 'applications.commands'],
+                    permissions: ['Administrator'],
+                });
+                inviteButton.setURL(inviteLink);
+            } catch (error) {
+                console.log('Could not generate invite link:', error.message);
+            }
+        }
+
+        const supportButton = new ButtonBuilder()
+            .setLabel('Support Server')
+            .setURL(config.SUPPORT_SERVER)
+            .setStyle(ButtonStyle.Link);
+
+        // Create Components V2 container
+        const container = new ContainerBuilder()
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `# Hey ${message.author.username}!\n` +
+                            `> I'm **${client.user.username}**, your partner is here!\n\n` +
+                            `**My Prefix** ${config.dot_emoji} \`${config.prefix}\`\n` +
+                            `**Server Ping** ${config.dot_emoji} ${client.ws.ping}ms\n` +
+                            `**Total Guilds** ${config.dot_emoji} ${client.guilds.cache.size.toLocaleString()}\n` +
+                            `**Total Users** ${config.dot_emoji} ${client.guilds.cache.reduce((size, g) => size + g.memberCount, 0).toLocaleString()}`
+                        )
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(
+                            client.user.displayAvatarURL({ size: 256, dynamic: true })
+                        )
+                    )
+                    .setButtonAccessory(inviteButton)
+            )
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `Type \`${config.prefix}help\` to see all commands!\n` +
+                            `Join our support server for help and updates.`
+                        )
+                    )
+                    .setButtonAccessory(supportButton)
+            )
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `**xecute.me**\nRequested by ${message.author.username}`
+                        )
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(
+                            message.author.displayAvatarURL({ dynamic: true })
+                        )
+                    )
+            );
+
+        return message.reply({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2,
+        });
+    } catch (error) {
+        console.error('Error in bot mention handler:', error);
+        return message.reply({
+            content: `Hey ${message.author.username}! My prefix is \`${config.prefix}\`\nType \`${config.prefix}help\` for all commands!`,
+            flags: 64,
+        });
+    }
+}
