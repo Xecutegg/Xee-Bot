@@ -117,6 +117,15 @@ export default {
 
       // Check if target member exists and role hierarchy
       if (targetMember) {
+        // Check if target is server owner (MUST BE FIRST)
+        if (targetMember.id === message.guild.ownerId) {
+          const errorEmbed = new EmbedBuilder()
+            .setColor(config.EMBED_COLORS.ERROR)
+            .setDescription("Tere baba k server h na madarchod jo usko ban de rha h?? Apni Aukat Main Rhe!.")
+
+          return message.reply({ embeds: [errorEmbed] });
+        }
+
         // Check if target has higher or equal role
         if (
           targetMember.roles.highest.position >=
@@ -142,19 +151,6 @@ export default {
             .setDescription(
               "Tera and uska role same h nhi ban de sakta hu usko lawde!."
             );
-
-          return message.reply({ embeds: [errorEmbed] });
-        }
-
-        // Check if target is server owner
-        if (targetMember.id === message.guild.ownerId) {
-          const errorEmbed = new EmbedBuilder()
-            .setColor(config.EMBED_COLORS.ERROR)
-            .setDescription("Tere baba k server h na? Apni Aukat Main Rhe!.")
-            .setFooter({
-              text: `Requested by ${message.author.username}`,
-              iconURL: message.author.displayAvatarURL(),
-            });
 
           return message.reply({ embeds: [errorEmbed] });
         }
@@ -327,6 +323,18 @@ export default {
 
       // Check if target member exists and role hierarchy
       if (targetMember) {
+        // Check if target is server owner (MUST BE FIRST)
+        if (targetMember.id === interaction.guild.ownerId) {
+          const errorEmbed = new EmbedBuilder()
+            .setColor(config.EMBED_COLORS.ERROR)
+            .setDescription("Tere baba k server h na? Apni Aukat Main Rhe!.")
+
+          return interaction.reply({
+            embeds: [errorEmbed],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
         // Check if target has higher or equal role
         if (
           targetMember.roles.highest.position >=
@@ -359,22 +367,6 @@ export default {
             .setDescription(
               "tera and uska role same h nhi ban de sakta hu usko lawde!."
             )
-            .setFooter({
-              text: `Requested by ${interaction.user.username}`,
-              iconURL: interaction.user.displayAvatarURL(),
-            });
-
-          return interaction.reply({
-            embeds: [errorEmbed],
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        // Check if target is server owner
-        if (targetMember.id === interaction.guild.ownerId) {
-          const errorEmbed = new EmbedBuilder()
-            .setColor(config.EMBED_COLORS.ERROR)
-            .setDescription("Tere baba k server h na? Apni Aukat Main Rhe!.")
             .setFooter({
               text: `Requested by ${interaction.user.username}`,
               iconURL: interaction.user.displayAvatarURL(),
