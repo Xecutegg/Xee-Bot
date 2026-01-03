@@ -174,9 +174,6 @@ export default {
               totalDeleted += msgs.size;
             });
           } catch (bulkError) {
-            console.warn(
-              `Bulk delete failed, falling back to individual delete: ${bulkError.message}`
-            );
             // If bulk delete fails, delete individually
             for (const msg of recentMessages) {
               try {
@@ -191,9 +188,7 @@ export default {
                 totalDeleted++;
                 await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay
               } catch (deleteError) {
-                console.warn(
-                  `Failed to delete message ${msg.id}: ${deleteError.message}`
-                );
+                // Silently skip messages that can't be deleted (already deleted, unknown message, etc.)
               }
             }
           }

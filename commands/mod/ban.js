@@ -156,24 +156,6 @@ export default {
         }
       }
 
-      // Try to DM the user before banning
-      let dmSent = false;
-      try {
-        const dmEmbed = new EmbedBuilder()
-          .setColor(config.EMBED_COLORS.ERROR)
-          .setDescription(
-            `You have been banned from **${message.guild.name}** by **${message.author.username}**`
-          );
-
-        await targetUser.send({ embeds: [dmEmbed] });
-        dmSent = true;
-      } catch (error) {
-        // User has DMs disabled or other error, continue with ban
-        console.log(
-          `Could not DM user ${targetUser.username}: ${error.message}`
-        );
-      }
-
       // Show loading message
       const loadingEmbed = new EmbedBuilder()
         .setColor(config.EMBED_COLORS.WARNING)
@@ -191,8 +173,26 @@ export default {
       try {
         await message.guild.members.ban(userId, {
           reason: `${reason} | Moderator: ${message.author.username} (${message.author.id})`,
-          deleteMessageDays: 1, // Delete messages from the last 1 day
+          deleteMessageSeconds: 86400, // Delete messages from the last 24 hours
         });
+
+        // Try to DM the user after successful ban
+        let dmSent = false;
+        try {
+          const dmEmbed = new EmbedBuilder()
+            .setColor(config.EMBED_COLORS.ERROR)
+            .setDescription(
+              `You have been banned from **${message.guild.name}** by **${message.author.username}**\n**Reason:** ${reason}`
+            );
+
+          await targetUser.send({ embeds: [dmEmbed] });
+          dmSent = true;
+        } catch (dmError) {
+          // User has DMs disabled or other error
+          console.log(
+            `Could not DM user ${targetUser.username}: ${dmError.message}`
+          );
+        }
 
         // Log the moderation action
         await logModerationAction(
@@ -379,24 +379,6 @@ export default {
         }
       }
 
-      // Try to DM the user before banning
-      let dmSent = false;
-      try {
-        const dmEmbed = new EmbedBuilder()
-          .setColor(config.EMBED_COLORS.ERROR)
-          .setDescription(
-            `You have been banned from **${interaction.guild.name}** by **${interaction.user.username}**`
-          );
-
-        await targetUser.send({ embeds: [dmEmbed] });
-        dmSent = true;
-      } catch (error) {
-        // User has DMs disabled or other error, continue with ban
-        console.log(
-          `Could not DM user ${targetUser.username}: ${error.message}`
-        );
-      }
-
       // Show loading message
       const loadingEmbed = new EmbedBuilder()
         .setColor(config.EMBED_COLORS.WARNING)
@@ -414,8 +396,26 @@ export default {
       try {
         await interaction.guild.members.ban(targetUser.id, {
           reason: `${reason} | Moderator: ${interaction.user.username} (${interaction.user.id})`,
-          deleteMessageDays: 1, // Delete messages from the last 1 day
+          deleteMessageSeconds: 86400, // Delete messages from the last 24 hours
         });
+
+        // Try to DM the user after successful ban
+        let dmSent = false;
+        try {
+          const dmEmbed = new EmbedBuilder()
+            .setColor(config.EMBED_COLORS.ERROR)
+            .setDescription(
+              `You have been banned from **${interaction.guild.name}** by **${interaction.user.username}**\n**Reason:** ${reason}`
+            );
+
+          await targetUser.send({ embeds: [dmEmbed] });
+          dmSent = true;
+        } catch (dmError) {
+          // User has DMs disabled or other error
+          console.log(
+            `Could not DM user ${targetUser.username}: ${dmError.message}`
+          );
+        }
 
         // Log the moderation action
         await logModerationAction(

@@ -20,7 +20,7 @@ export default {
             return message.reply('Please provide a user to add to the no-prefix list.');
         }
 
-        const user = await resolveUserGlobal(args[0], client);
+        const user = await resolveUserGlobal(client, args[0]);
         if (!user) {
             return message.reply('User not found. Please provide a valid user ID, mention, or username.');
         }

@@ -29,7 +29,7 @@ export default {
         if (message.mentions.users.size > 0) {
             user = message.mentions.users.first();
         } else {
-            user = await resolveUserGlobal(args[0], client);
+            user = await resolveUserGlobal(client, args[0]);
         }
 
         if (!user) {
