@@ -64,7 +64,7 @@ export default {
       if (userId === message.author.id) {
         const errorEmbed = new EmbedBuilder()
           .setColor(config.EMBED_COLORS.ERROR)
-          .setDescription("You cannot ban yourself.");
+          .setDescription("Chutiya h kya? You cannot ban yourself.");
 
         return message.reply({ embeds: [errorEmbed] });
       }
@@ -73,7 +73,7 @@ export default {
       if (userId === client.user.id) {
         const errorEmbed = new EmbedBuilder()
           .setColor(config.EMBED_COLORS.ERROR)
-          .setDescription("I cannot ban myself.");
+          .setDescription("Teri tara jhatu me khud ko hi ban kr lu? I cannot ban myself.");
 
         return message.reply({ embeds: [errorEmbed] });
       }
@@ -140,7 +140,7 @@ export default {
           const errorEmbed = new EmbedBuilder()
             .setColor(config.EMBED_COLORS.ERROR)
             .setDescription(
-              "I cannot ban a user with equal or higher role than me."
+              "Tera and uska role same h nhi ban de sakta hu usko lawde!."
             );
 
           return message.reply({ embeds: [errorEmbed] });
@@ -150,7 +150,7 @@ export default {
         if (targetMember.id === message.guild.ownerId) {
           const errorEmbed = new EmbedBuilder()
             .setColor(config.EMBED_COLORS.ERROR)
-            .setDescription("Cannot ban the server owner.")
+            .setDescription("Tere baba k server h na? Apni Aukat Main Rhe!.")
             .setFooter({
               text: `Requested by ${message.author.username}`,
               iconURL: message.author.displayAvatarURL(),
@@ -263,7 +263,7 @@ export default {
       if (targetUser.id === interaction.user.id) {
         const errorEmbed = new EmbedBuilder()
           .setColor(config.EMBED_COLORS.ERROR)
-          .setDescription("You cannot ban yourself.")
+          .setDescription("Chutiya h kya? You cannot ban yourself.")
           .setFooter({
             text: `Requested by ${interaction.user.username}`,
             iconURL: interaction.user.displayAvatarURL(),
@@ -279,7 +279,7 @@ export default {
       if (targetUser.id === client.user.id) {
         const errorEmbed = new EmbedBuilder()
           .setColor(config.EMBED_COLORS.ERROR)
-          .setDescription("I cannot ban myself.")
+          .setDescription("Teri tara jhatu me khud ko hi ban kr lu? I cannot ban myself.")
           .setFooter({
             text: `Requested by ${interaction.user.username}`,
             iconURL: interaction.user.displayAvatarURL(),
@@ -357,7 +357,7 @@ export default {
           const errorEmbed = new EmbedBuilder()
             .setColor(config.EMBED_COLORS.ERROR)
             .setDescription(
-              "I cannot ban a user with equal or higher role than me."
+              "tera and uska role same h nhi ban de sakta hu usko lawde!."
             )
             .setFooter({
               text: `Requested by ${interaction.user.username}`,
@@ -374,7 +374,7 @@ export default {
         if (targetMember.id === interaction.guild.ownerId) {
           const errorEmbed = new EmbedBuilder()
             .setColor(config.EMBED_COLORS.ERROR)
-            .setDescription("Cannot ban the server owner.")
+            .setDescription("Tere baba k server h na? Apni Aukat Main Rhe!.")
             .setFooter({
               text: `Requested by ${interaction.user.username}`,
               iconURL: interaction.user.displayAvatarURL(),
