@@ -254,16 +254,11 @@ export default {
             membersWhoDidntHaveRole.push(member); // These are the ones we actually gave the role to
 
             // Log the moderation action for each member who received the role
-            await logModerationAction(
-              client,
-              message.guild,
-              'role',
-              member.user,
-              message.author,
-              reason,
-              null,
-              { roleName: targetRole.name, roleId: targetRole.id, action: 'added' }
-            );
+            await logModerationAction(message.guild, 'role', {
+              moderator: message.author,
+              target: member.user,
+              reason: `Added role: ${targetRole.name}`
+            });
           } else {
             successfulMembers.push(member); // Already has role, count as success
             membersWhoAlreadyHadRole.push(member); // Track who already had it

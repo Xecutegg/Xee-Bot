@@ -25,50 +25,25 @@ export default {
         return message.reply({ embeds: [errorEmbed] });
       }
 
-      const guildData = await getSettings(message.guild);
+      const guildData = await getSettings(message.guild.id);
 
-      // Check if modlog is already setup (but allow disable and channel changes)
-      if (guildData.mod_logs_channel && args[0].toLowerCase() !== "disable") {
-        // Check if the existing channel still exists
-        const existingChannel = message.guild.channels.cache.get(
-          guildData.mod_logs_channel
-        );
-
-        if (existingChannel) {
-          const alreadySetupEmbed = new EmbedBuilder()
-            .setColor(config.EMBED_COLORS.WARNING)
+      // Check if user wants to disable modlogs
+      if (args[0].toLowerCase() === "disable") {
+        if (!guildData.modlog?.channelId) {
+          const errorEmbed = new EmbedBuilder()
+            .setColor(config.EMBED_COLORS.ERROR)
             .setDescription(
-              `${config.info} | Moderation logs are already configured for this server.\n\n**Current Channel:** ${existingChannel}\n\n**Options:**\n${config.dot_emoji} Use \`.modlog disable\` to turn off modlogs\n${config.dot_emoji} Provide a different channel to change the modlog channel\n${config.dot_emoji} Use the same channel again to confirm setup`
+              `${config.cross_emoji} | Moderation logs are not currently enabled for this server.`
             )
             .setFooter({
               text: `Requested by ${message.author.username}`,
               iconURL: message.author.displayAvatarURL(),
-            })
-            .setTimestamp();
-
-          // Check if user is trying to set the same channel again
-          const newChannelId = args[0].replace(/[<#>]/g, "");
-          if (newChannelId === guildData.mod_logs_channel) {
-            return message.reply({
-              embeds: [
-                alreadySetupEmbed.setDescription(
-                  `${config.check_emoji} This channel is already set as the moderation logs channel.\n\n**Current Channel:** ${existingChannel}.`
-                ),
-              ],
             });
-          }
 
-          return message.reply({ embeds: [alreadySetupEmbed] });
-        } else {
-          // Channel was deleted, clear it from database
-          guildData.mod_logs_channel = null;
-          await guildData.save();
+          return message.reply({ embeds: [errorEmbed] });
         }
-      }
 
-      // Check if user wants to disable modlogs
-      if (args[0].toLowerCase() === "disable") {
-        guildData.mod_logs_channel = null;
+        guildData.modlog.channelId = null;
         await guildData.save();
 
         const successEmbed = new EmbedBuilder()
@@ -96,6 +71,42 @@ export default {
           );
 
         return message.reply({ embeds: [errorEmbed] });
+      }
+
+      // Check if modlog is already setup with the same channel
+      if (guildData.modlog?.channelId === channelId) {
+        const existingChannel = message.guild.channels.cache.get(channelId);
+
+        const alreadySetEmbed = new EmbedBuilder()
+          .setColor(config.EMBED_COLORS.WARNING)
+          .setDescription(
+            `${config.info} | This channel is already configured as the moderation logs channel.\n\n**Current Channel:** ${existingChannel}\n\n**Options:**\n${config.dot_emoji} Use \`.modlog disable\` to turn off modlogs\n${config.dot_emoji} Provide a different channel to change the modlog channel`
+          )
+          .setFooter({
+            text: `Requested by ${message.author.username}`,
+            iconURL: message.author.displayAvatarURL(),
+          })
+          .setTimestamp();
+
+        return message.reply({ embeds: [alreadySetEmbed] });
+      }
+
+      // Check if modlog is setup with a different channel
+      if (guildData.modlog?.channelId && guildData.modlog.channelId !== channelId) {
+        const oldChannel = message.guild.channels.cache.get(guildData.modlog.channelId);
+
+        const updateEmbed = new EmbedBuilder()
+          .setColor(config.EMBED_COLORS.WARNING)
+          .setDescription(
+            `${config.info} | Moderation logs are currently configured for ${oldChannel || 'a deleted channel'}.\n\nAre you sure you want to change it to <#${channelId}>?`
+          )
+          .setFooter({
+            text: `Requested by ${message.author.username}`,
+            iconURL: message.author.displayAvatarURL(),
+          })
+          .setTimestamp();
+
+        // Continue with the update - no confirmation needed, just inform
       }
 
       // Get the channel
@@ -142,18 +153,21 @@ export default {
       }
 
       // Update database
-      guildData.mod_logs_channel = channelId;
+      const isUpdate = guildData.modlog?.channelId ? true : false;
+      const oldChannelId = guildData.modlog?.channelId;
+
+      guildData.modlog.channelId = channelId;
       await guildData.save();
 
       // Send confirmation embed
       const successEmbed = new EmbedBuilder()
         .setColor(config.EMBED_COLORS.SUCCESS)
-        .setTitle(`${config.mod_emoji} Moderation Logs Setup Complete`)
+        .setTitle(`${config.mod_emoji} Moderation Logs ${isUpdate ? 'Updated' : 'Setup Complete'}`)
         .setDescription(
-          `${config.check_emoji} | Moderation logs channel has been set to ${channel}\n\n**What will be logged:**\n${config.dot_emoji} Ban/Unban actions\n${config.dot_emoji} Kick actions\n${config.dot_emoji} Timeout/Untimeout actions\n${config.dot_emoji} Warning/Remove warning actions\n${config.dot_emoji} Role add/remove actions\n${config.dot_emoji} Channel lock/unlock actions\n${config.dot_emoji} Channel hide/unhide actions\n\n**Features:**\n${config.dot_emoji} Full user and moderator information\n${config.dot_emoji} Timestamps and reasons\n${config.dot_emoji} Duration for temporary actions\n${config.dot_emoji} User avatars and IDs for easy identification`
+          `${config.check_emoji} | Moderation logs channel has been ${isUpdate ? 'updated to' : 'set to'} ${channel}${isUpdate && oldChannelId ? `\n\n**Previous Channel:** <#${oldChannelId}>` : ''}\n\n**What will be logged:**\n${config.dot_emoji} Ban/Unban actions\n${config.dot_emoji} Kick actions\n${config.dot_emoji} Timeout/Untimeout actions\n${config.dot_emoji} Warning/Remove warning actions\n${config.dot_emoji} Role add/remove actions\n${config.dot_emoji} Channel lock/unlock actions\n${config.dot_emoji} Channel hide/unhide actions\n\n**Features:**\n${config.dot_emoji} Full user and moderator information\n${config.dot_emoji} Timestamps and reasons\n${config.dot_emoji} Duration for temporary actions\n${config.dot_emoji} User avatars and IDs for easy identification`
         )
         .setFooter({
-          text: `Set by ${message.author.username}`,
+          text: `${isUpdate ? 'Updated' : 'Set'} by ${message.author.username}`,
           iconURL: message.author.displayAvatarURL(),
         })
         .setTimestamp();

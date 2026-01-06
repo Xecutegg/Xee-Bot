@@ -1,6 +1,7 @@
 import { EmbedBuilder } from "discord.js";
 import { getMember, addWarning } from "../database/models/Member.js";
 import { getSettings } from "../database/models/Guild.js";
+import { logModerationAction } from "./modLogger.js";
 import config from "../config.js";
 
 /**
@@ -53,6 +54,13 @@ export async function warnTarget(issuer, target, reason, client) {
         const updatedMember = await getMember(guildId, target.id);
         const warningCount = updatedMember.warnings || 1;
         const maxWarnings = settings.max_warn.limit || 3;
+
+        // Log the moderation action
+        await logModerationAction(issuer.guild, 'warn', {
+            moderator: issuer.user || issuer,
+            target: target.user,
+            reason: reason || "No reason provided"
+        });
 
         // Check if max warnings reached and take action
         let actionTaken = null;

@@ -3,6 +3,10 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
   MessageFlags,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
 } from "discord.js";
 import { buildEmbed } from "../../utils/buildEmbed.js";
 import { logModerationAction } from "../../utils/modLogger.js";
@@ -179,13 +183,28 @@ export default {
         // Try to DM the user after successful ban
         let dmSent = false;
         try {
-          const dmEmbed = new EmbedBuilder()
-            .setColor(config.EMBED_COLORS.ERROR)
-            .setDescription(
-              `You have been banned from **${message.guild.name}** by **${message.author.username}**\n**Reason:** ${reason}`
+          const dmContainer = new ContainerBuilder()
+            .addSectionComponents(
+              new SectionBuilder()
+                .addTextDisplayComponents(
+                  new TextDisplayBuilder().setContent(
+                    `# You Have Been Banned\n\n` +
+                    `You have been banned from **${message.guild.name}**\n\n` +
+                    `**Moderator:** ${message.author.username}\n` +
+                    `**Reason:** ${reason}`
+                  )
+                )
+                .setThumbnailAccessory(
+                  new ThumbnailBuilder().setURL(
+                    message.guild.iconURL({ dynamic: true }) || client.user.displayAvatarURL()
+                  )
+                )
             );
 
-          await targetUser.send({ embeds: [dmEmbed] });
+          await targetUser.send({
+            components: [dmContainer],
+            flags: MessageFlags.IsComponentsV2
+          });
           dmSent = true;
         } catch (dmError) {
           // User has DMs disabled or other error
@@ -195,16 +214,11 @@ export default {
         }
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          "ban",
-          targetUser,
-          message.author,
-          reason,
-          null,
-          { dmSent: dmSent }
-        );
+        await logModerationAction(message.guild, 'ban', {
+          moderator: message.author,
+          target: targetUser,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()
@@ -418,16 +432,11 @@ export default {
         }
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          interaction.guild,
-          "ban",
-          targetUser,
-          interaction.user,
-          reason,
-          null,
-          { dmSent: dmSent }
-        );
+        await logModerationAction(interaction.guild, 'ban', {
+          moderator: interaction.user,
+          target: targetUser,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()

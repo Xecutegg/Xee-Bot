@@ -154,16 +154,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          'unlock',
-          client.user,
-          message.author,
-          reason,
-          null,
-          { channelName: targetChannel.name, channelId: targetChannel.id }
-        );
+        await logModerationAction(message.guild, 'unlock', {
+          moderator: message.author,
+          target: targetChannel,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()
@@ -324,16 +319,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          interaction.guild,
-          'unlock',
-          client.user,
-          interaction.user,
-          reason,
-          null,
-          { channelName: targetChannel.name, channelId: targetChannel.id }
-        );
+        await logModerationAction(interaction.guild, 'unlock', {
+          moderator: interaction.user,
+          target: targetChannel,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()

@@ -226,20 +226,11 @@ export default {
       }
 
       // Log the moderation action
-      await logModerationAction(
-        client,
-        message.guild,
-        "purge",
-        targetUser || message.author,
-        message.author,
-        reason,
-        null,
-        {
-          messagesDeleted: totalDeleted,
-          channelId: message.channel.id,
-          channelName: message.channel.name,
-        }
-      );
+      await logModerationAction(message.guild, 'purge', {
+        moderator: message.author,
+        target: targetUser || message.author,
+        reason: `Deleted ${totalDeleted} messages`
+      });
 
       // Delete loading message if it still exists
       if (!loadingMsgDeleted) {
@@ -281,6 +272,7 @@ export default {
         });
 
       return message.reply({ embeds: [errorEmbed] });
-    }
+    } 
+
   },
 };

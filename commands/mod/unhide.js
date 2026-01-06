@@ -212,21 +212,11 @@ export default {
         }
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          'unhide',
-          client.user,
-          message.author,
-          reason,
-          null,
-          {
-            channelName: targetChannel.name,
-            channelId: targetChannel.id,
-            unhiddenForRoles: unhiddenRoles.map(r => r.name),
-            failedRoles: failedRoles.map(r => r.name)
-          }
-        );
+        await logModerationAction(message.guild, 'unhide', {
+          moderator: message.author,
+          target: targetChannel,
+          reason: reason
+        });
 
         // Success embed
         const unhiddenRolesList = unhiddenRoles

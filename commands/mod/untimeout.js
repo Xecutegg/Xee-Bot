@@ -1,4 +1,13 @@
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, MessageFlags } from "discord.js";
+import {
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  MessageFlags,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
+} from "discord.js";
 import { buildEmbed } from "../../utils/buildEmbed.js";
 import { logModerationAction } from "../../utils/modLogger.js";
 import config from "../../config.js";
@@ -181,13 +190,28 @@ export default {
       // Try to DM the user before removing timeout
       let dmSent = false;
       try {
-        const dmEmbed = new EmbedBuilder()
-          .setColor(config.EMBED_COLORS.SUCCESS)
-          .setDescription(
-            `Your timeout has been removed in **${message.guild.name}** by **${message.author.username}**`
+        const dmContainer = new ContainerBuilder()
+          .addSectionComponents(
+            new SectionBuilder()
+              .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                  `# Your Timeout Has Been Removed\n\n` +
+                  `Your timeout has been removed in **${message.guild.name}**\n\n` +
+                  `**Moderator:** ${message.author.username}\n` +
+                  `**Reason:** ${reason}`
+                )
+              )
+              .setThumbnailAccessory(
+                new ThumbnailBuilder().setURL(
+                  message.guild.iconURL({ dynamic: true }) || client.user.displayAvatarURL()
+                )
+              )
           );
 
-        await targetMember.user.send({ embeds: [dmEmbed] });
+        await targetMember.user.send({
+          components: [dmContainer],
+          flags: MessageFlags.IsComponentsV2
+        });
         dmSent = true;
       } catch (error) {
         // User has DMs disabled or other error, continue with untimeout
@@ -217,16 +241,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          'untimeout',
-          targetMember.user,
-          message.author,
-          reason,
-          null,
-          { dmSent: dmSent, originalTimeoutEnd: originalTimeoutEnd }
-        );
+        await logModerationAction(message.guild, 'untimeout', {
+          moderator: message.author,
+          target: targetMember.user,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()
@@ -382,14 +401,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          interaction.guild,
-          'untimeout',
-          targetUser,
-          interaction.user,
-          reason
-        );
+        await logModerationAction(interaction.guild, 'untimeout', {
+          moderator: interaction.user,
+          target: targetUser,
+          reason: reason
+        });
 
         // Try to DM the user
         try {

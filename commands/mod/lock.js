@@ -155,16 +155,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          'lock',
-          client.user,
-          message.author,
-          reason,
-          null,
-          { channelName: targetChannel.name, channelId: targetChannel.id }
-        );
+        await logModerationAction(message.guild, 'lock', {
+          moderator: message.author,
+          target: targetChannel,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()
@@ -319,16 +314,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          interaction.guild,
-          'lock',
-          client.user,
-          interaction.user,
-          reason,
-          null,
-          { channelName: targetChannel.name, channelId: targetChannel.id }
-        );
+        await logModerationAction(interaction.guild, 'lock', {
+          moderator: interaction.user,
+          target: targetChannel,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()

@@ -1,5 +1,6 @@
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, MessageFlags, ButtonBuilder, ButtonStyle, PermissionsBitField } from 'discord.js';
 import Idp from '../database/models/idp.js';
+import config from '../config.js';
 
 export default {
     name: 'interactionCreate',
@@ -12,7 +13,7 @@ export default {
 
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
-                        content: 'Yehi Button Sirf Moderators ke liye hai! Kripiya Management Team ko he use krne de.',
+                        content: 'This Button is only for Moderators! Please let the Management Team use it.\n\n **If you still want to press it, go ahead and press it hard and curse more!**',
                         flags: 64
                     });
                 }
@@ -52,7 +53,17 @@ export default {
                 const secondRow = new ActionRowBuilder().addComponents(passwordInput);
                 modal.addComponents(firstRow, secondRow);
 
-                await interaction.showModal(modal);
+                try {
+                    await interaction.showModal(modal);
+                } catch (error) {
+                    console.error('Error showing modal:', error);
+                    if (!interaction.replied && !interaction.deferred) {
+                        await interaction.reply({
+                            content: '❌ Failed to show the modal. Please try again.',
+                            flags: 64
+                        });
+                    }
+                }
             }
 
             if (interaction.customId.startsWith('sendto_')) {
@@ -61,7 +72,7 @@ export default {
 
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
-                        content: 'Yehi Button Sirf Moderators ke liye hai! Kripiya Management Team ko he use krne de.\n\n **Fir V agr apko apni ma chudani h to or jor se dabao and or gali kha lo madarchod!**',
+                        content: 'This Button is only for Moderators! Please let the Management Team use it.\n\n **If you still want to press it, go ahead and press it hard and curse more!**',
                         flags: 64
                     });
                 }
@@ -82,7 +93,17 @@ export default {
                 const firstRow = new ActionRowBuilder().addComponents(channelInput);
                 modal.addComponents(firstRow);
 
-                await interaction.showModal(modal);
+                try {
+                    await interaction.showModal(modal);
+                } catch (error) {
+                    console.error('Error showing modal:', error);
+                    if (!interaction.replied && !interaction.deferred) {
+                        await interaction.reply({
+                            content: '❌ Failed to show the modal. Please try again.',
+                            flags: 64
+                        });
+                    }
+                }
             }
         }
 
@@ -171,7 +192,7 @@ export default {
                 });
 
                 await interaction.editReply({
-                    content: '✅ Successfully Send Idp On this chnnenl!',
+                    content: `${config.check_emoji} | IDP SEND KR DIYAA!`,
                     flags: 64
                 });
             }
@@ -182,7 +203,7 @@ export default {
 
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
-                        content: 'Yehi Button Sirf Managment ke liye hai! Kripiya Management Team ko he use krne de',
+                        content: 'This Button is only for Moderators! Please let the Management Team use it.\n\n **If you still want to press it, go ahead and press it hard and curse more!**',
                         flags: 64
                     });
                 }

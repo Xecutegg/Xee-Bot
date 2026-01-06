@@ -1,4 +1,13 @@
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, MessageFlags } from "discord.js";
+import {
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  MessageFlags,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
+} from "discord.js";
 import { buildEmbed } from "../../utils/buildEmbed.js";
 import { logModerationAction } from "../../utils/modLogger.js";
 import config from "../../config.js";
@@ -153,13 +162,28 @@ export default {
       // Try to DM the user before kicking
       let dmSent = false;
       try {
-        const dmEmbed = new EmbedBuilder()
-          .setColor(config.EMBED_COLORS.ERROR)
-          .setDescription(
-            `You have been kicked from **${message.guild.name}** by **${message.author.username}**`
+        const dmContainer = new ContainerBuilder()
+          .addSectionComponents(
+            new SectionBuilder()
+              .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                  `# You Have Been Kicked\n\n` +
+                  `You have been kicked from **${message.guild.name}**\n\n` +
+                  `**Moderator:** ${message.author.username}\n` +
+                  `**Reason:** ${reason}`
+                )
+              )
+              .setThumbnailAccessory(
+                new ThumbnailBuilder().setURL(
+                  message.guild.iconURL({ dynamic: true }) || client.user.displayAvatarURL()
+                )
+              )
           );
 
-        await targetUser.send({ embeds: [dmEmbed] });
+        await targetUser.send({
+          components: [dmContainer],
+          flags: MessageFlags.IsComponentsV2
+        });
         dmSent = true;
       } catch (error) {
         // User has DMs disabled or other error, continue with kick
@@ -188,14 +212,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          'kick',
-          targetUser,
-          message.author,
-          reason
-        );
+        await logModerationAction(message.guild, 'kick', {
+          moderator: message.author,
+          target: targetUser,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()
@@ -392,14 +413,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          interaction.guild,
-          'kick',
-          targetUser,
-          interaction.user,
-          reason
-        );
+        await logModerationAction(interaction.guild, 'kick', {
+          moderator: interaction.user,
+          target: targetUser,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()

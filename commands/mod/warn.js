@@ -1,4 +1,13 @@
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, MessageFlags } from "discord.js";
+import {
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  MessageFlags,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
+} from "discord.js";
 import { warnTarget } from "../../utils/ModUtils.js";
 import config from "../../config.js";
 
@@ -207,29 +216,42 @@ export default {
 
       // Try to send a DM to the warned user
       try {
-        let dmDescription = `You have been warned in **${message.guild.name}**\n\n`;
-        dmDescription += `**Reason:** ${reason}\n`;
-        dmDescription += `**Warned by:** ${message.author.username}\n`;
-        dmDescription += `**Total Warnings:** ${result.warnings}/${result.maxWarnings}`;
-
-        const dmEmbed = new EmbedBuilder()
-          .setColor(config.EMBED_COLORS.WARNING)
-          .setDescription(dmDescription)
-          .setThumbnail(message.guild.iconURL())
-          .setFooter({
-            text: `Warning ${result.warnings} of ${result.maxWarnings}`,
-            iconURL: message.guild.iconURL(),
-          });
+        let dmContent = `# You Have Been Warned\n\n`;
+        dmContent += `You have been warned in **${message.guild.name}**\n\n`;
+        dmContent += `**Moderator:** ${message.author.username}\n`;
+        dmContent += `**Reason:** ${reason}\n`;
+        dmContent += `**Total Warnings:** ${result.warnings}/${result.maxWarnings}`;
 
         if (result.actionTaken && result.actionTaken.success) {
-          dmEmbed.addFields({
-            name: "**Maximum Warnings Reached**",
-            value: `You have been **${result.actionTaken.action}** for reaching the maximum number of warnings (${result.maxWarnings}).`,
-            inline: false,
-          });
+          dmContent += `\n\n## Maximum Warnings Reached\n`;
+          dmContent += `You have been **${result.actionTaken.action}** for reaching the maximum number of warnings (${result.maxWarnings}).`;
+          if (result.actionTaken.duration) {
+            dmContent += ` Duration: ${result.actionTaken.duration}`;
+          }
         }
 
-        await targetMember.send({ embeds: [dmEmbed] });
+        const dmContainer = new ContainerBuilder()
+          .addSectionComponents(
+            new SectionBuilder()
+              .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(dmContent)
+              )
+              .setThumbnailAccessory(
+                new ThumbnailBuilder().setURL(
+                  message.guild.iconURL({ dynamic: true }) || client.user.displayAvatarURL()
+                )
+              )
+          )
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+              `Warning ${result.warnings} of ${result.maxWarnings}`
+            )
+          );
+
+        await targetMember.send({
+          components: [dmContainer],
+          flags: MessageFlags.IsComponentsV2
+        });
       } catch (error) {
         // User has DMs disabled or blocked the bot - this is fine
       }

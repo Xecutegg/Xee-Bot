@@ -1,4 +1,13 @@
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, MessageFlags } from "discord.js";
+import {
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  MessageFlags,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
+} from "discord.js";
 import { buildEmbed } from "../../utils/buildEmbed.js";
 import { logModerationAction } from "../../utils/modLogger.js";
 import config from "../../config.js";
@@ -125,14 +134,11 @@ export default {
         }
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          'unban',
-          targetUser,
-          message.author,
-          reason
-        );
+        await logModerationAction(message.guild, 'unban', {
+          moderator: message.author,
+          target: targetUser,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()
@@ -149,13 +155,28 @@ export default {
 
         // Try to DM the user about the unban
         try {
-          const dmEmbed = new EmbedBuilder()
-            .setColor(config.EMBED_COLORS.SUCCESS)
-            .setDescription(
-              `You have been unbanned from **${message.guild.name}** by **${message.author.username}**`
+          const dmContainer = new ContainerBuilder()
+            .addSectionComponents(
+              new SectionBuilder()
+                .addTextDisplayComponents(
+                  new TextDisplayBuilder().setContent(
+                    `# You Have Been Unbanned\n\n` +
+                    `You have been unbanned from **${message.guild.name}**\n\n` +
+                    `**Moderator:** ${message.author.username}\n` +
+                    `**Reason:** ${reason}`
+                  )
+                )
+                .setThumbnailAccessory(
+                  new ThumbnailBuilder().setURL(
+                    message.guild.iconURL({ dynamic: true }) || client.user.displayAvatarURL()
+                  )
+                )
             );
 
-          await targetUser.send({ embeds: [dmEmbed] });
+          await targetUser.send({
+            components: [dmContainer],
+            flags: MessageFlags.IsComponentsV2
+          });
         } catch (dmError) {
           // User has DMs disabled or other error, that's fine
           console.log(
@@ -269,14 +290,11 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          interaction.guild,
-          'unban',
-          bannedUser.user,
-          interaction.user,
-          reason
-        );
+        await logModerationAction(interaction.guild, 'unban', {
+          moderator: interaction.user,
+          target: bannedUser.user,
+          reason: reason
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()

@@ -75,7 +75,7 @@ export default {
 
                 if (missingPerms.length > 0) {
                     return message.reply({
-                        content: `${config.cross_emoji} | Chup Lawde Teri ma ki chut perms le kr aa ye wala \`${missingPerms.join(', ')}\``,
+                        content: `${config.cross_emoji} | You Need This \`${missingPerms.join(', ')}\` Permission to Use This Command!`,
                         flags: 64
                     });
                 }

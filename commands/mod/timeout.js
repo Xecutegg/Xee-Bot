@@ -3,6 +3,10 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
   MessageFlags,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
 } from "discord.js";
 import { buildEmbed } from "../../utils/buildEmbed.js";
 import { logModerationAction } from "../../utils/modLogger.js";
@@ -237,13 +241,30 @@ export default {
       // Try to DM the user before timing out
       let dmSent = false;
       try {
-        const dmEmbed = new EmbedBuilder()
-          .setColor(config.EMBED_COLORS.WARNING)
-          .setDescription(
-            `You have been timed out in **${message.guild.name}** by **${message.author.username}** expiring in <t:${Math.floor((Date.now() + durationMs) / 1000)}:F>.`
+        const dmContainer = new ContainerBuilder()
+          .addSectionComponents(
+            new SectionBuilder()
+              .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                  `# You Have Been Timed Out\n\n` +
+                  `You have been timed out in **${message.guild.name}**\n\n` +
+                  `**Moderator:** ${message.author.username}\n` +
+                  `**Duration:** ${duration}\n` +
+                  `**Expires:** <t:${Math.floor((Date.now() + durationMs) / 1000)}:F>\n` +
+                  `**Reason:** ${reason}`
+                )
+              )
+              .setThumbnailAccessory(
+                new ThumbnailBuilder().setURL(
+                  message.guild.iconURL({ dynamic: true }) || client.user.displayAvatarURL()
+                )
+              )
           );
 
-        await targetMember.user.send({ embeds: [dmEmbed] });
+        await targetMember.user.send({
+          components: [dmContainer],
+          flags: MessageFlags.IsComponentsV2
+        });
         dmSent = true;
       } catch (error) {
         // User has DMs disabled or other error, continue with timeout
@@ -275,16 +296,12 @@ export default {
         const expiresAt = Math.floor((Date.now() + durationMs) / 1000);
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          "timeout",
-          targetMember.user,
-          message.author,
-          reason,
-          args[1],
-          { dmSent: dmSent, expiresAt: expiresAt }
-        );
+        await logModerationAction(message.guild, 'timeout', {
+          moderator: message.author,
+          target: targetMember.user,
+          reason: reason,
+          duration: args[1]
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()
@@ -562,16 +579,12 @@ export default {
         );
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          interaction.guild,
-          "timeout",
-          targetUser,
-          interaction.user,
-          reason,
-          durationString,
-          { dmSent: dmSent, expiresAt: expiresAt }
-        );
+        await logModerationAction(interaction.guild, 'timeout', {
+          moderator: interaction.user,
+          target: targetUser,
+          reason: reason,
+          duration: durationString
+        });
 
         // Success embed
         const successEmbed = new EmbedBuilder()

@@ -4,6 +4,11 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
+  MessageFlags,
 } from "discord.js";
 import {
   getMember,
@@ -243,20 +248,11 @@ export default {
               );
 
               // Log the action
-              await logModerationAction(
-                client,
-                message.guild,
-                "removewarn",
-                targetMember.user,
-                interaction.user,
-                `Removed warning #${warningNumber}: ${warningToRemove.reason}`,
-                null,
-                {
-                  warningNumber: warningNumber,
-                  originalReason: warningToRemove.reason,
-                  remainingWarnings: updatedMember.warnings,
-                }
-              );
+              await logModerationAction(message.guild, 'removewarn', {
+                moderator: interaction.user,
+                target: targetMember.user,
+                reason: `Removed warning #${warningNumber}`
+              });
 
               // Success embed
               const successEmbed = new EmbedBuilder()
@@ -276,17 +272,28 @@ export default {
 
               // Try to send a DM to the user
               try {
-                const dmEmbed = new EmbedBuilder()
-                  .setColor(config.EMBED_COLORS.SUCCESS)
-                  .setDescription(
-                    `One of your warnings has been removed in **${message.guild.name} by ${interaction.user.username}**`
-                  )
-                  .setFooter({
-                    text: `Warning removed from ${message.guild.name}`,
-                    iconURL: message.guild.iconURL(),
-                  });
+                const dmContainer = new ContainerBuilder()
+                  .addSectionComponents(
+                    new SectionBuilder()
+                      .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                          `# Warning Removed\n\n` +
+                          `One of your warnings has been removed in **${message.guild.name}**\n\n` +
+                          `**Moderator:** ${interaction.user.username}\n` +
+                          `**Remaining Warnings:** ${updatedMember.warnings}`
+                        )
+                      )
+                      .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(
+                          message.guild.iconURL({ dynamic: true }) || interaction.user.displayAvatarURL()
+                        )
+                      )
+                  );
 
-                await targetMember.send({ embeds: [dmEmbed] });
+                await targetMember.send({
+                  components: [dmContainer],
+                  flags: MessageFlags.IsComponentsV2
+                });
               } catch (error) {
                 // User has DMs disabled or blocked the bot - this is fine
               }

@@ -195,19 +195,11 @@ export default {
               await clearWarnings(message.guild.id, targetMember.id);
 
               // Log the action
-              await logModerationAction(
-                client,
-                message.guild,
-                "clearwarnings",
-                targetMember.user,
-                interaction.user,
-                `Cleared all ${clearedWarnings} warning(s)`,
-                null,
-                {
-                  clearedWarnings: clearedWarnings,
-                  remainingWarnings: 0,
-                }
-              );
+              await logModerationAction(message.guild, 'clearwarnings', {
+                moderator: interaction.user,
+                target: targetMember.user,
+                reason: `Cleared all warnings`
+              });
 
               // Success embed
               const successEmbed = new EmbedBuilder()

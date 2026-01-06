@@ -261,16 +261,11 @@ export default {
             successfulMembers.push(member);
 
             // Log the moderation action for each member who had the role removed
-            await logModerationAction(
-              client,
-              message.guild,
-              'rrole',
-              member.user,
-              message.author,
-              reason,
-              null,
-              { roleName: targetRole.name, roleId: targetRole.id, action: 'removed' }
-            );
+            await logModerationAction(message.guild, 'role', {
+              moderator: message.author,
+              target: member.user,
+              reason: `Removed role: ${targetRole.name}`
+            });
           } else {
             membersWhoDidntHaveRole.push(member);
           }
@@ -644,16 +639,11 @@ export default {
           success++;
 
           // Log the moderation action for each member who had the role removed
-          await logModerationAction(
-            client,
-            message.guild,
-            'rrole',
-            member.user,
-            message.author,
-            reason,
-            null,
-            { roleName: targetRole.name, roleId: targetRole.id, action: 'removed', bulkAction: 'humans' }
-          );
+          await logModerationAction(message.guild, 'role', {
+            moderator: message.author,
+            target: member.user,
+            reason: `Removed role: ${targetRole.name}`
+          });
         } catch (error) {
           failed++;
         }

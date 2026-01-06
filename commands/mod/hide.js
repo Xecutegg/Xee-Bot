@@ -212,21 +212,11 @@ export default {
         }
 
         // Log the moderation action
-        await logModerationAction(
-          client,
-          message.guild,
-          'hide',
-          client.user,
-          message.author,
-          reason,
-          null,
-          {
-            channelName: targetChannel.name,
-            channelId: targetChannel.id,
-            hiddenFromRoles: hiddenRoles.map(r => r.name),
-            failedRoles: failedRoles.map(r => r.name)
-          }
-        );
+        await logModerationAction(message.guild, 'hide', {
+          moderator: message.author,
+          target: targetChannel,
+          reason: reason
+        });
 
         // Success embed
         const hiddenRolesList = hiddenRoles.map((role) => role.name).join(", ");
