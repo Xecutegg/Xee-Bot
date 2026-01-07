@@ -89,13 +89,23 @@ const getYouTubeResults = async (query) => {
 
             data = results.items
                 .filter((video) => !video.isLive && video.id) // Ensure video.id exists
-                .map((video) => ({
-                    videoId: video.id,
-                    title: video.title || "Unknown Title",
-                    artists: video.channel?.name || "Unknown Channel",
-                    thumbnail: video.thumbnails[1]?.url || video.thumbnails[0]?.url || null,
-                    duration: formatDuration(video.duration || 0),
-                }));
+                .map((video) => {
+                    // Get best quality thumbnail (maxresdefault > sddefault > hqdefault)
+                    const videoId = video.id;
+                    const maxresThumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+                    const sdThumbnail = `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`;
+                    const hqThumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+                    return {
+                        videoId: video.id,
+                        title: video.title || "Unknown Title",
+                        artists: video.channel?.name || "Unknown Channel",
+                        thumbnail: maxresThumbnail,
+                        thumbnailFallback: sdThumbnail,
+                        thumbnailHQ: hqThumbnail,
+                        duration: formatDuration(video.duration || 0),
+                    };
+                });
         }
 
         return data;

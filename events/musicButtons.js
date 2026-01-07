@@ -1,4 +1,104 @@
-import { ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
+import {
+    ButtonBuilder,
+    ButtonStyle,
+    ActionRowBuilder,
+    MessageFlags,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize
+} from 'discord.js';
+import config from '../config.js';
+import musicIcons from '../UI/icons/musicicons.js';
+import { formatDuration } from '../handlers/poru.js';
+
+// Helper function to update the now playing message
+async function updateNowPlayingMessage(client, player) {
+    if (!player.nowPlayingMessage) return;
+
+    try {
+        const channel = client.channels.cache.get(player.nowPlayingMessage.channelId);
+        const message = await channel?.messages.fetch(player.nowPlayingMessage.messageId);
+        if (!message) return;
+
+        const track = player.current;
+        if (!track) return;
+
+        // Get current player state
+        const duration = formatDuration(track.info.length);
+        const requester = track.info.requester?.username || track.requester?.username || 'Unknown';
+        const platform = track.info.sourceName || 'YouTube Music';
+        const trackUrl = track.info.uri || `https://www.youtube.com/watch?v=${track.info.identifier}`;
+        const queueLength = player.queue.length || 0;
+        const loopStatus = player.loop === 'TRACK' ? 'Track' : player.loop === 'QUEUE' ? 'Queue' : 'Off';
+        const autoplayStatus = player.autoplay ? 'On' : 'Off';
+
+        // Song artwork URL
+        let artworkUrl = track.info.artworkUrl || track.info.thumbnail || musicIcons.playerIcon;
+        if (track.info.identifier && !artworkUrl.includes('maxresdefault')) {
+            artworkUrl = `https://i.ytimg.com/vi/${track.info.identifier}/maxresdefault.jpg`;
+        }
+
+        // Rebuild the container with updated info
+        const container = new ContainerBuilder()
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `## Xee Is Now Playing Your Favorite\n` +
+                            `> **Link Of This Song : [${track.info.title}](${trackUrl})**\n` +
+                            `> **Song Author : ${track.info.author || 'Unknown Artist'}**`
+                        )
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(musicIcons.playerIcon)
+                    )
+            )
+            .addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setSpacing(SeparatorSpacingSize.Large)
+                    .setDivider(true)
+            )
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `> **Duration:** ${duration} | **Source:** ${platform} | **Volume:** ${player.volume || 100}%` +
+                            `\n > **Queue:** ${queueLength} tracks | **Loop:** ${loopStatus} | **Autoplay:** ${autoplayStatus}` +
+                            `\n > **Requested By:** ${requester} | Made With Love By Xecute`
+                        )
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(artworkUrl)
+                    )
+            );
+
+        // Rebuild buttons with current state
+        const row1Components = message.components[1].components;
+        const updatedRow1 = new ActionRowBuilder().addComponents(
+            row1Components.map((btn, idx) => {
+                const newBtn = ButtonBuilder.from(btn);
+                // Update pause/play button (index 1)
+                if (idx === 1) {
+                    newBtn.setEmoji(player.isPaused ? '<:push:1458308050015223849>' : '<:resume:1458310847603540143>');
+                }
+                return newBtn;
+            })
+        );
+
+        const row2 = ActionRowBuilder.from(message.components[2]);
+        const row3 = ActionRowBuilder.from(message.components[3]);
+
+        await message.edit({
+            components: [container, updatedRow1, row2, row3],
+            flags: MessageFlags.IsComponentsV2
+        });
+    } catch (err) {
+        console.error('Failed to update now playing message:', err);
+    }
+}
 
 export default {
     name: 'interactionCreate',
@@ -119,6 +219,9 @@ export default {
                 const currentVol = player.volume || 100;
                 const newVol = Math.min(currentVol + 10, 100);
                 player.setVolume(newVol);
+
+                await updateNowPlayingMessage(client, player);
+
                 await interaction.reply({
                     content: `🔊 Volume increased to ${newVol}%`,
                     ephemeral: true
@@ -128,6 +231,9 @@ export default {
                 const currentVol = player.volume || 100;
                 const newVol = Math.max(currentVol - 10, 0);
                 player.setVolume(newVol);
+
+                await updateNowPlayingMessage(client, player);
+
                 await interaction.reply({
                     content: `🔉 Volume decreased to ${newVol}%`,
                     ephemeral: true
@@ -156,18 +262,21 @@ export default {
                 const currentLoop = player.loop;
                 if (!currentLoop || currentLoop === 'NONE') {
                     player.setLoop('TRACK');
+                    await updateNowPlayingMessage(client, player);
                     await interaction.reply({
                         content: '🔂 Looping current track',
                         ephemeral: true
                     });
                 } else if (currentLoop === 'TRACK') {
                     player.setLoop('QUEUE');
+                    await updateNowPlayingMessage(client, player);
                     await interaction.reply({
                         content: '🔁 Looping queue',
                         ephemeral: true
                     });
                 } else {
                     player.setLoop('NONE');
+                    await updateNowPlayingMessage(client, player);
                     await interaction.reply({
                         content: '➡️ Loop disabled',
                         ephemeral: true
@@ -207,6 +316,9 @@ export default {
             }
             else if (customId.includes('_autoplay_')) {
                 player.autoplay = !player.autoplay;
+
+                await updateNowPlayingMessage(client, player);
+
                 await interaction.reply({
                     content: `📻 Autoplay ${player.autoplay ? 'enabled' : 'disabled'}`,
                     ephemeral: true

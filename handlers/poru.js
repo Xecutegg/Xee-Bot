@@ -132,7 +132,8 @@ export default function initializePoru(client) {
                 const loopBtn = new ButtonBuilder()
                     .setCustomId(`music_loop_${player.guildId}`)
                     .setEmoji('<:1421028644200906752:1458308487883919371>')
-                    .setStyle(ButtonStyle.Secondary);
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true);
 
                 const autoplayBtn = new ButtonBuilder()
                     .setCustomId(`music_autoplay_${player.guildId}`)
@@ -164,11 +165,14 @@ export default function initializePoru(client) {
 
                 // Get queue info
                 const queueLength = player.queue.length || 0;
-                const loopStatus = player.loop === 'TRACK' ? `${config.check_emoji} Track` : player.loop === 'QUEUE' ? `${config.check_emoji} Queue` : `${config.cross_emoji} Off`;
-                const autoplayStatus = player.autoplay ? `${config.check_emoji} On` : `${config.cross_emoji} Off`;
 
-                // Song artwork URL
-                const artworkUrl = track.info.artworkUrl || track.info.thumbnail || musicIcons.playerIcon;
+                // Song artwork URL - Get best quality
+                let artworkUrl = track.info.artworkUrl || track.info.thumbnail || musicIcons.playerIcon;
+
+                // If YouTube video, try to get maxresdefault thumbnail
+                if (track.info.identifier && !artworkUrl.includes('maxresdefault')) {
+                    artworkUrl = `https://i.ytimg.com/vi/${track.info.identifier}/maxresdefault.jpg`;
+                }
 
                 // Create the styled container with Components V2
                 const container = new ContainerBuilder()
@@ -177,9 +181,9 @@ export default function initializePoru(client) {
                         new SectionBuilder()
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
-                                    `# <a:music:834814432365248563> Now Playing\n` +
-                                    `## [${track.info.title}](${trackUrl})\n` +
-                                    `### ${track.info.author || 'Unknown Artist'}`
+                                    `## Xee Is Now Playing Your Favorite\n` +
+                                    `> **Link Of This Song : [${track.info.title}](${trackUrl})**\n` +
+                                    `> **Song Author : ${track.info.author || 'Unknown Artist'}**`
                                 )
                             )
                             .setThumbnailAccessory(
@@ -192,52 +196,18 @@ export default function initializePoru(client) {
                             .setSpacing(SeparatorSpacingSize.Large)
                             .setDivider(true)
                     )
-                    // Large Song Image Section (16:9 style)
+                    // Full-Width Song Image with Track Details
                     .addSectionComponents(
                         new SectionBuilder()
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
-                                    `**🎵 Track Details**\n` +
-                                    `**Duration:** ${duration}\n` +
-                                    `**Platform:** ${platform}\n` +
-                                    `**Volume:** ${player.volume || 100}%`
+                                    `\n > **Queue:** ${queueLength} Tracks` +
+                                    `\n> **Duration:** ${duration} | **Source:** ${platform} | **Volume:** ${player.volume || 100}%` +
+                                    `\n > **Requested By:** ${requester} | Made With Love By Xecute`
                                 )
                             )
                             .setThumbnailAccessory(
                                 new ThumbnailBuilder().setURL(artworkUrl)
-                            )
-                    )
-                    // Separator
-                    .addSeparatorComponents(
-                        new SeparatorBuilder()
-                            .setSpacing(SeparatorSpacingSize.Small)
-                            .setDivider(true)
-                    )
-                    // Queue & Settings Info
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `## <a:beats:928310693416009828> Player Status\n` +
-                            `**Queue Length** ${config.dot_emoji} ${queueLength} tracks\n` +
-                            `**Loop Mode** ${config.dot_emoji} ${loopStatus}\n` +
-                            `**Autoplay** ${config.dot_emoji} ${autoplayStatus}`
-                        )
-                    )
-                    // Separator
-                    .addSeparatorComponents(
-                        new SeparatorBuilder()
-                            .setSpacing(SeparatorSpacingSize.Small)
-                            .setDivider(true)
-                    )
-                    // Footer Section with User
-                    .addSectionComponents(
-                        new SectionBuilder()
-                            .addTextDisplayComponents(
-                                new TextDisplayBuilder().setContent(
-                                    `**xecute.me**\nRequested by ${requester}`
-                                )
-                            )
-                            .setThumbnailAccessory(
-                                new ThumbnailBuilder().setURL(requesterAvatar)
                             )
                     );
 
