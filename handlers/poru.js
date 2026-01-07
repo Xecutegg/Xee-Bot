@@ -17,7 +17,6 @@ import {
 } from "discord.js";
 import musicIcons from "../UI/icons/musicicons.js";
 import { dynamicCard } from "../UI/dynamicCard.js";
-import { getUpNext, addToQueue } from "../utils/youtubeAutoplay.js";
 
 /**
  * Initialize Poru music manager
@@ -143,7 +142,8 @@ export default function initializePoru(client) {
                 const autoplayBtn = new ButtonBuilder()
                     .setCustomId(`music_autoplay_${player.guildId}`)
                     .setEmoji('<:1421028645589225643:1458308507932688486>')
-                    .setStyle(ButtonStyle.Secondary);
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true);
 
                 const likeBtn = new ButtonBuilder()
                     .setCustomId(`music_like_${player.guildId}`)
@@ -249,7 +249,7 @@ export default function initializePoru(client) {
                     .addComponents(queueBtn, volumeDownBtn, stopBtn, volumeUpBtn);
 
                 const row3 = new ActionRowBuilder()
-                    .addComponents(replayBtn, loopBtn, autoplayBtn, likeBtn);
+                    .addComponents(replayBtn, loopBtn, likeBtn);
 
                 // Prepare message payload
                 const messagePayload = {
@@ -278,114 +278,11 @@ export default function initializePoru(client) {
 
         poru.on("trackEnd", async (player, track) => {
             console.log(`Track ended: ${track.info.title}`);
-
-            // Check if autoplay is enabled and queue is running low (less than 10 tracks)
-            if (player.autoplay && player.queue.length < 10) {
-                const currentTrack = track;
-
-                // Only support YouTube/YouTube Music for autoplay
-                if (currentTrack?.info?.sourceName?.toLowerCase().includes('youtube')) {
-                    try {
-                        console.log(`🔄 Queue running low (${player.queue.length} tracks), fetching more recommendations...`);
-
-                        const upNext = await getUpNext(
-                            currentTrack.info.identifier,
-                            { username: `${client.user.username} Autoplay` },
-                            20 // Fetch 20 more tracks to refill queue
-                        );
-
-                        if (upNext && upNext.length > 0) {
-                            // Filter out tracks already in queue to avoid duplicates
-                            const existingTrackIds = player.queue.map(t => t.info?.identifier).filter(Boolean);
-                            const newTracks = upNext.filter(t => !existingTrackIds.includes(t.info?.identifier));
-
-                            if (newTracks.length > 0) {
-                                // Add tracks to queue
-                                await addToQueue(player, newTracks);
-                                console.log(`✅ Added ${newTracks.length} autoplay tracks to queue (Total: ${player.queue.length})`);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('❌ Error fetching autoplay tracks:', error.message);
-                    }
-                }
-            }
         });
 
         poru.on("queueEnd", async (player) => {
             const channel = client.channels.cache.get(player.textChannel);
 
-            // If autoplay is enabled, try to fetch and play related tracks
-            if (player.autoplay) {
-                const lastTrack = player.previousTrack || player.currentTrack;
-
-                // Only support YouTube/YouTube Music for autoplay
-                if (lastTrack?.info?.sourceName?.toLowerCase().includes('youtube')) {
-                    try {
-                        if (channel) {
-                            await channel.send({
-                                embeds: [{
-                                    color: parseInt(config.EMBED_COLORS.BOT_EMBED.replace('#', ''), 16),
-                                    description: '📻 Autoplay enabled, fetching 50 related tracks...'
-                                }]
-                            }).catch(console.error);
-                        }
-
-                        const upNext = await getUpNext(
-                            lastTrack.info.identifier,
-                            { username: `${client.user.username} Autoplay` },
-                            50 // Fetch 50 tracks
-                        );
-
-                        if (upNext && upNext.length > 0) {
-                            // Add tracks to queue
-                            await addToQueue(player, upNext);
-
-                            // Start playing if not already
-                            if (!player.isPlaying) {
-                                await player.play();
-                            }
-
-                            if (channel) {
-                                await channel.send({
-                                    embeds: [{
-                                        color: parseInt(config.EMBED_COLORS.BOT_EMBED.replace('#', ''), 16),
-                                        description: `✅ Added ${upNext.length} autoplay tracks to queue!`
-                                    }]
-                                }).catch(console.error);
-                            }
-
-                            console.log(`✅ Added ${upNext.length} autoplay tracks and resumed playback`);
-                            return; // Don't destroy player if autoplay succeeded
-                        } else {
-                            throw new Error('No autoplay tracks found');
-                        }
-                    } catch (error) {
-                        console.error('❌ Autoplay error:', error.message);
-                        player.autoplay = false; // Disable autoplay on error
-
-                        if (channel) {
-                            await channel.send({
-                                embeds: [{
-                                    color: parseInt(config.EMBED_COLORS.ERROR.replace('#', ''), 16),
-                                    description: '❌ Autoplay disabled due to error. Queue has ended.'
-                                }]
-                            }).catch(console.error);
-                        }
-                    }
-                } else {
-                    if (channel) {
-                        await channel.send({
-                            embeds: [{
-                                color: parseInt(config.EMBED_COLORS.ERROR.replace('#', ''), 16),
-                                description: '❌ Autoplay only supports YouTube/YouTube Music. Queue has ended.'
-                            }]
-                        }).catch(console.error);
-                    }
-                }
-            }
-
-            // Default queue end behavior (if autoplay is off or failed)
             if (channel) {
                 channel.send({
                     embeds: [{
@@ -405,8 +302,6 @@ export default function initializePoru(client) {
 
         poru.on("playerCreate", (player) => {
             console.log(`🎵 Player created for guild: ${player.guildId}`);
-            // Initialize autoplay as false by default
-            player.autoplay = false;
         });
 
         poru.on("playerDestroy", (player) => {

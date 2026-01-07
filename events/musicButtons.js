@@ -36,7 +36,6 @@ async function updateNowPlayingMessage(client, player) {
         const trackUrl = track.info.uri || `https://www.youtube.com/watch?v=${track.info.identifier}`;
         const queueLength = player.queue.length || 0;
         const loopStatus = player.loop === 'TRACK' ? 'Track' : player.loop === 'QUEUE' ? 'Queue' : 'Off';
-        const autoplayStatus = player.autoplay ? 'On' : 'Off';
 
         // Song artwork URL
         let artworkUrl = track.info.artworkUrl || track.info.thumbnail || musicIcons.playerIcon;
@@ -95,7 +94,7 @@ async function updateNowPlayingMessage(client, player) {
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     `> **Duration:** ${duration} | **Source:** ${platform} | **Volume:** ${player.volume || 100}%` +
-                    `\n > **Queue:** ${queueLength} tracks | **Loop:** ${loopStatus} | **Autoplay:** ${autoplayStatus}` +
+                    `\n > **Queue:** ${queueLength} tracks | **Loop:** ${loopStatus}` +
                     `\n > **Requested By:** ${requester} | Made With Love By Xecute`
                 )
             );
@@ -343,98 +342,6 @@ export default {
                     content: '🗑️ Queue cleared',
                     ephemeral: true
                 });
-            }
-            else if (customId.includes('_autoplay_')) {
-                const wasAutoplay = player.autoplay || false; // Default to false
-                const newAutoplayState = !wasAutoplay;
-
-                // If enabling autoplay, check track compatibility first
-                if (newAutoplayState) {
-                    const currentTrack = player.currentTrack;
-
-                    // Check if current track is from YouTube
-                    if (!currentTrack?.info?.sourceName?.toLowerCase().includes('youtube')) {
-                        await updateNowPlayingMessage(client, player);
-                        return interaction.reply({
-                            content: '❌ Autoplay only supports YouTube/YouTube Music tracks.',
-                            ephemeral: true
-                        });
-                    }
-
-                    // Enable autoplay first
-                    player.autoplay = true;
-                    await updateNowPlayingMessage(client, player);
-
-                    await interaction.reply({
-                        content: '📻 Autoplay enabled! Fetching 50 recommended tracks...',
-                        ephemeral: true
-                    });
-
-                    // Fetch recommended tracks in background
-                    (async () => {
-                        try {
-                            const { getUpNext, addToQueue } = await import('../utils/youtubeAutoplay.js');
-
-                            const upNext = await getUpNext(
-                                currentTrack.info.identifier,
-                                { username: `${client.user.username} Autoplay` },
-                                50 // Fetch 50 tracks
-                            );
-
-                            if (!upNext || upNext.length === 0) {
-                                await interaction.followUp({
-                                    content: '⚠️ Could not fetch recommended tracks right now. Autoplay will work when songs change.',
-                                    ephemeral: true
-                                }).catch(() => { });
-                                return;
-                            }
-
-                            // Filter out tracks already in queue
-                            const existingIds = player.queue.map(t => t.info?.identifier).filter(Boolean);
-                            const newTracks = upNext.filter(t => !existingIds.includes(t.info?.identifier));
-
-                            if (newTracks.length === 0) {
-                                await interaction.followUp({
-                                    content: '⚠️ All recommended tracks are already in queue.',
-                                    ephemeral: true
-                                }).catch(() => { });
-                                return;
-                            }
-
-                            // Add tracks to queue
-                            await addToQueue(player, newTracks);
-
-                            await interaction.followUp({
-                                content: `✅ Added ${newTracks.length} recommended tracks to queue!`,
-                                ephemeral: true
-                            }).catch(() => { });
-
-                            console.log(`✅ Autoplay: Added ${newTracks.length} tracks to queue`);
-
-                        } catch (error) {
-                            console.error('❌ Error fetching autoplay tracks:', error);
-                            await interaction.followUp({
-                                content: '⚠️ Error fetching tracks right now. Autoplay will work when songs change.',
-                                ephemeral: true
-                            }).catch(() => { });
-                        }
-                    })();
-
-                } else {
-                    // Disabling autoplay
-                    player.autoplay = false;
-                    await updateNowPlayingMessage(client, player);
-
-                    // Remove autoplay tracks from queue
-                    const originalQueueLength = player.queue.length;
-                    player.queue.remove((track, index) => track.autoplay === true);
-                    const removedCount = originalQueueLength - player.queue.length;
-
-                    await interaction.reply({
-                        content: `📻 Autoplay disabled${removedCount > 0 ? ` (removed ${removedCount} autoplay tracks)` : ''}`,
-                        ephemeral: true
-                    });
-                }
             }
             else if (customId.includes('_replay_')) {
                 if (!player.currentTrack || !player.currentTrack.info) {
