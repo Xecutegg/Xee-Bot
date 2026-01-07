@@ -4,15 +4,18 @@ import {
     ActionRowBuilder,
     MessageFlags,
     ContainerBuilder,
-    SectionBuilder,
     TextDisplayBuilder,
-    ThumbnailBuilder,
     SeparatorBuilder,
-    SeparatorSpacingSize
+    SeparatorSpacingSize,
+    AttachmentBuilder,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder
 } from 'discord.js';
 import config from '../config.js';
 import musicIcons from '../UI/icons/musicicons.js';
 import { formatDuration } from '../handlers/poru.js';
+import { dynamicCard } from '../UI/dynamicCard.js';
+import { getUser } from '../database/models/User.js';
 
 // Helper function to update the now playing message
 async function updateNowPlayingMessage(client, player) {
@@ -41,40 +44,61 @@ async function updateNowPlayingMessage(client, player) {
             artworkUrl = `https://i.ytimg.com/vi/${track.info.identifier}/maxresdefault.jpg`;
         }
 
-        // Rebuild the container with updated info
+        // Generate updated dynamic card image
+
+        let musicCardAttachment = null;
+        try {
+            const musicCardBuffer = await dynamicCard({
+                thumbnailURL: artworkUrl,
+                songTitle: track.info.title,
+                songArtist: track.info.author || 'Unknown Artist',
+                trackRequester: requester,
+                duration: duration,
+                queueLength: queueLength,
+                volume: player.volume || 100,
+                platform: platform
+            });
+            musicCardAttachment = new AttachmentBuilder(musicCardBuffer, { name: 'xee-music.png' });
+        } catch (cardErr) {
+            console.error('Failed to regenerate music card:', cardErr);
+        }
+
+        // Rebuild the container with updated info matching initial layout
         const container = new ContainerBuilder()
-            .addSectionComponents(
-                new SectionBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `## Xee Is Now Playing Your Favorite\n` +
-                            `> **Link Of This Song : [${track.info.title}](${trackUrl})**\n` +
-                            `> **Song Author : ${track.info.author || 'Unknown Artist'}**`
-                        )
-                    )
-                    .setThumbnailAccessory(
-                        new ThumbnailBuilder().setURL(musicIcons.playerIcon)
-                    )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `## Xee Is Now Playing Your Favorite\n` +
+                    `> **Link Of This Song : [${track.info.title}](${trackUrl})**\n` +
+                    `> **Song Author : ${track.info.author || 'Unknown Artist'}**`
+                )
             )
             .addSeparatorComponents(
                 new SeparatorBuilder()
                     .setSpacing(SeparatorSpacingSize.Large)
                     .setDivider(true)
-            )
-            .addSectionComponents(
-                new SectionBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `> **Duration:** ${duration} | **Source:** ${platform} | **Volume:** ${player.volume || 100}%` +
-                            `\n > **Queue:** ${queueLength} tracks | **Loop:** ${loopStatus} | **Autoplay:** ${autoplayStatus}` +
-                            `\n > **Requested By:** ${requester} | Made With Love By Xecute`
-                        )
-                    )
-                    .setThumbnailAccessory(
-                        new ThumbnailBuilder().setURL(artworkUrl)
-                    )
             );
 
+        if (musicCardAttachment) {
+            container.addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems(
+                    new MediaGalleryItemBuilder().setURL('attachment://xee-music.png')
+                )
+            );
+        }
+
+        container
+            .addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setSpacing(SeparatorSpacingSize.Large)
+                    .setDivider(true)
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `> **Duration:** ${duration} | **Source:** ${platform} | **Volume:** ${player.volume || 100}%` +
+                    `\n > **Queue:** ${queueLength} tracks | **Loop:** ${loopStatus} | **Autoplay:** ${autoplayStatus}` +
+                    `\n > **Requested By:** ${requester} | Made With Love By Xecute`
+                )
+            );
         // Rebuild buttons with current state
         const row1Components = message.components[1].components;
         const updatedRow1 = new ActionRowBuilder().addComponents(
@@ -91,10 +115,16 @@ async function updateNowPlayingMessage(client, player) {
         const row2 = ActionRowBuilder.from(message.components[2]);
         const row3 = ActionRowBuilder.from(message.components[3]);
 
-        await message.edit({
+        const editPayload = {
             components: [container, updatedRow1, row2, row3],
             flags: MessageFlags.IsComponentsV2
-        });
+        };
+
+        if (musicCardAttachment) {
+            editPayload.files = [musicCardAttachment];
+        }
+
+        await message.edit(editPayload);
     } catch (err) {
         console.error('Failed to update now playing message:', err);
     }
@@ -196,7 +226,7 @@ export default {
                         ephemeral: true
                     });
                 }
-                player.stopTrack();
+                await player.skip();
                 await interaction.reply({
                     content: '⏭️ Skipped to next track',
                     ephemeral: true
@@ -315,14 +345,96 @@ export default {
                 });
             }
             else if (customId.includes('_autoplay_')) {
-                player.autoplay = !player.autoplay;
+                const wasAutoplay = player.autoplay || false; // Default to false
+                const newAutoplayState = !wasAutoplay;
 
-                await updateNowPlayingMessage(client, player);
+                // If enabling autoplay, check track compatibility first
+                if (newAutoplayState) {
+                    const currentTrack = player.currentTrack;
 
-                await interaction.reply({
-                    content: `📻 Autoplay ${player.autoplay ? 'enabled' : 'disabled'}`,
-                    ephemeral: true
-                });
+                    // Check if current track is from YouTube
+                    if (!currentTrack?.info?.sourceName?.toLowerCase().includes('youtube')) {
+                        await updateNowPlayingMessage(client, player);
+                        return interaction.reply({
+                            content: '❌ Autoplay only supports YouTube/YouTube Music tracks.',
+                            ephemeral: true
+                        });
+                    }
+
+                    // Enable autoplay first
+                    player.autoplay = true;
+                    await updateNowPlayingMessage(client, player);
+
+                    await interaction.reply({
+                        content: '📻 Autoplay enabled! Fetching 50 recommended tracks...',
+                        ephemeral: true
+                    });
+
+                    // Fetch recommended tracks in background
+                    (async () => {
+                        try {
+                            const { getUpNext, addToQueue } = await import('../utils/youtubeAutoplay.js');
+
+                            const upNext = await getUpNext(
+                                currentTrack.info.identifier,
+                                { username: `${client.user.username} Autoplay` },
+                                50 // Fetch 50 tracks
+                            );
+
+                            if (!upNext || upNext.length === 0) {
+                                await interaction.followUp({
+                                    content: '⚠️ Could not fetch recommended tracks right now. Autoplay will work when songs change.',
+                                    ephemeral: true
+                                }).catch(() => { });
+                                return;
+                            }
+
+                            // Filter out tracks already in queue
+                            const existingIds = player.queue.map(t => t.info?.identifier).filter(Boolean);
+                            const newTracks = upNext.filter(t => !existingIds.includes(t.info?.identifier));
+
+                            if (newTracks.length === 0) {
+                                await interaction.followUp({
+                                    content: '⚠️ All recommended tracks are already in queue.',
+                                    ephemeral: true
+                                }).catch(() => { });
+                                return;
+                            }
+
+                            // Add tracks to queue
+                            await addToQueue(player, newTracks);
+
+                            await interaction.followUp({
+                                content: `✅ Added ${newTracks.length} recommended tracks to queue!`,
+                                ephemeral: true
+                            }).catch(() => { });
+
+                            console.log(`✅ Autoplay: Added ${newTracks.length} tracks to queue`);
+
+                        } catch (error) {
+                            console.error('❌ Error fetching autoplay tracks:', error);
+                            await interaction.followUp({
+                                content: '⚠️ Error fetching tracks right now. Autoplay will work when songs change.',
+                                ephemeral: true
+                            }).catch(() => { });
+                        }
+                    })();
+
+                } else {
+                    // Disabling autoplay
+                    player.autoplay = false;
+                    await updateNowPlayingMessage(client, player);
+
+                    // Remove autoplay tracks from queue
+                    const originalQueueLength = player.queue.length;
+                    player.queue.remove((track, index) => track.autoplay === true);
+                    const removedCount = originalQueueLength - player.queue.length;
+
+                    await interaction.reply({
+                        content: `📻 Autoplay disabled${removedCount > 0 ? ` (removed ${removedCount} autoplay tracks)` : ''}`,
+                        ephemeral: true
+                    });
+                }
             }
             else if (customId.includes('_replay_')) {
                 if (!player.currentTrack || !player.currentTrack.info) {
@@ -394,19 +506,14 @@ export default {
                     });
                 }
 
-                // Store liked song in database/cache
-                if (!client.likedSongs) client.likedSongs = new Map();
-
-                const userId = interaction.user.id;
-                if (!client.likedSongs.has(userId)) {
-                    client.likedSongs.set(userId, []);
-                }
-
-                const likedSongs = client.likedSongs.get(userId);
                 const track = player.currentTrack;
+                const userId = interaction.user.id;
+
+                // Get user from database
+                const userDb = await getUser(interaction.user);
 
                 // Check if already liked
-                const alreadyLiked = likedSongs.some(s => s.url === track.info.uri);
+                const alreadyLiked = userDb.likedSongs.some(s => s.url === track.info.uri);
                 if (alreadyLiked) {
                     return interaction.reply({
                         content: '💚 This song is already in your liked songs!',
@@ -414,15 +521,17 @@ export default {
                     });
                 }
 
-                // Add to liked songs
-                likedSongs.push({
+                // Add to liked songs in database
+                userDb.likedSongs.push({
                     title: track.info.title,
                     author: track.info.author,
                     url: track.info.uri,
                     thumbnail: track.info.artworkUrl || track.info.thumbnail,
                     duration: track.info.length,
-                    likedAt: Date.now()
+                    likedAt: new Date()
                 });
+
+                await userDb.save();
 
                 await interaction.reply({
                     content: `💚 Added **${track.info.title}** to your liked songs!`,

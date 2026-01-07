@@ -142,9 +142,6 @@ async function playDirectURL(client, message, url, player, channel, statusMessag
     }
 }
 
-/**
- * Show YouTube search results with select menu
- */
 async function showSearchResults(client, message, query, results, player, channel) {
     const displayResults = results.slice(0, 10);
 

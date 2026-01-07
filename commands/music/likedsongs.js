@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import config from '../../config.js';
+import { getUser } from '../../database/models/User.js';
 
 export default {
     name: 'likedsongs',
@@ -12,8 +13,10 @@ export default {
     aliases: ['likes', 'likedmusic', 'favoritemusic'],
 
     async execute(client, message, args) {
-        // Get user's liked songs
-        if (!client.likedSongs || !client.likedSongs.has(message.author.id)) {
+        // Get user's liked songs from database
+        const userDb = await getUser(message.author);
+
+        if (!userDb.likedSongs || userDb.likedSongs.length === 0) {
             return message.reply({
                 embeds: [new EmbedBuilder()
                     .setColor(config.EMBED_COLORS.ERROR)
@@ -22,16 +25,7 @@ export default {
             });
         }
 
-        const likedSongs = client.likedSongs.get(message.author.id);
-
-        if (likedSongs.length === 0) {
-            return message.reply({
-                embeds: [new EmbedBuilder()
-                    .setColor(config.EMBED_COLORS.ERROR)
-                    .setDescription('❌ You haven\'t liked any songs yet!\nUse the 💚 button on the now playing message to like songs.')
-                ]
-            });
-        }
+        const likedSongs = userDb.likedSongs;
 
         // Pagination settings
         const itemsPerPage = 10;

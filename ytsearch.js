@@ -58,9 +58,28 @@ const formatDuration = (seconds) => {
 };
 
 /**
+ * Check if maxresdefault thumbnail (1920x1080) exists for a video
+ * @param {string} videoId - YouTube video ID
+ * @returns {Promise<boolean>} Whether HD thumbnail exists
+ */
+const checkHDThumbnail = async (videoId) => {
+    try {
+        const url = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+        const response = await fetch(url, { method: 'HEAD' });
+        // YouTube returns 200 even for placeholder images, check content-length
+        const contentLength = response.headers.get('content-length');
+        // Placeholder images are typically small (~1-2KB), real HD thumbnails are larger
+        return response.ok && contentLength && parseInt(contentLength) > 10000;
+    } catch {
+        return false;
+    }
+};
+
+/**
  * Search YouTube Music with fallback to regular YouTube
+ * Only returns videos with 1920x1080 thumbnails
  * @param {string} query - Search query
- * @returns {Promise<Array>} Array of video results
+ * @returns {Promise<Array>} Array of video results with HD thumbnails
  */
 const getYouTubeResults = async (query) => {
     // Input validation
@@ -90,25 +109,33 @@ const getYouTubeResults = async (query) => {
             data = results.items
                 .filter((video) => !video.isLive && video.id) // Ensure video.id exists
                 .map((video) => {
-                    // Get best quality thumbnail (maxresdefault > sddefault > hqdefault)
                     const videoId = video.id;
-                    const maxresThumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
-                    const sdThumbnail = `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`;
-                    const hqThumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
                     return {
                         videoId: video.id,
                         title: video.title || "Unknown Title",
                         artists: video.channel?.name || "Unknown Channel",
-                        thumbnail: maxresThumbnail,
-                        thumbnailFallback: sdThumbnail,
-                        thumbnailHQ: hqThumbnail,
+                        thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
                         duration: formatDuration(video.duration || 0),
                     };
                 });
         }
 
-        return data;
+        // Filter for only videos with HD (1920x1080) thumbnails
+        const hdResults = [];
+        for (const item of data) {
+            const videoId = item.videoId;
+            if (videoId) {
+                const hasHD = await checkHDThumbnail(videoId);
+                if (hasHD) {
+                    item.thumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+                    hdResults.push(item);
+                }
+            }
+            // Limit to 10 HD results to avoid too many requests
+            if (hdResults.length >= 10) break;
+        }
+
+        return hdResults;
     } catch (error) {
         console.error("YouTube search completely failed:", error);
         return [];

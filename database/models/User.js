@@ -12,9 +12,19 @@ const userSchema = new mongoose.Schema(
     discriminator: String,
     logged: Boolean,
     noPrefix: { type: Boolean, default: false },
-    is_premium: { type: Boolean, default: false },
-    premium_expiry: { type: Date, default: null },
-    premium_guilds: { type: Array, default: [] },
+    likedSongs: {
+      type: [
+        {
+          title: String,
+          author: String,
+          url: String,
+          thumbnail: String,
+          duration: Number,
+          likedAt: { type: Date, default: Date.now }
+        }
+      ],
+      default: []
+    },
   },
   {
     timestamps: {
