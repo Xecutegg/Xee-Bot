@@ -1,5 +1,5 @@
-const { GlobalFonts } = require("@napi-rs/canvas");
-const fs = require("fs");
+import { GlobalFonts } from "@napi-rs/canvas";
+import fs from "fs";
 
 async function fontRegister(fontPath, fontName) {
   if (!fs.existsSync(fontPath)) {
@@ -19,4 +19,4 @@ async function fontRegister(fontPath, fontName) {
   }
 }
 
-module.exports = { fontRegister };
+export { fontRegister };

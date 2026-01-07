@@ -10,9 +10,13 @@ import {
     ButtonStyle,
     SeparatorBuilder,
     SeparatorSpacingSize,
-    ActionRowBuilder
+    ActionRowBuilder,
+    AttachmentBuilder,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder
 } from "discord.js";
 import musicIcons from "../UI/icons/musicicons.js";
+import { dynamicCard } from "../UI/dynamicCard.js";
 
 /**
  * Initialize Poru music manager
@@ -174,44 +178,69 @@ export default function initializePoru(client) {
                     artworkUrl = `https://i.ytimg.com/vi/${track.info.identifier}/maxresdefault.jpg`;
                 }
 
+                // Generate dynamic music card image
+                let musicCardBuffer;
+                let musicCardAttachment;
+                try {
+                    musicCardBuffer = await dynamicCard({
+                        thumbnailURL: artworkUrl,
+                        songTitle: track.info.title,
+                        songArtist: track.info.author || 'Unknown Artist',
+                        trackRequester: requester,
+                        duration: duration,
+                        queueLength: queueLength,
+                        volume: player.volume || 100,
+                        platform: platform
+                    });
+                    musicCardAttachment = new AttachmentBuilder(musicCardBuffer, { name: 'xee-music.png' });
+                } catch (cardError) {
+                    console.error('Error generating music card:', cardError);
+                    musicCardBuffer = null;
+                }
+
                 // Create the styled container with Components V2
                 const container = new ContainerBuilder()
                     // Header Section with Title
-                    .addSectionComponents(
-                        new SectionBuilder()
-                            .addTextDisplayComponents(
-                                new TextDisplayBuilder().setContent(
-                                    `## Xee Is Now Playing Your Favorite\n` +
-                                    `> **Link Of This Song : [${track.info.title}](${trackUrl})**\n` +
-                                    `> **Song Author : ${track.info.author || 'Unknown Artist'}**`
-                                )
-                            )
-                            .setThumbnailAccessory(
-                                new ThumbnailBuilder().setURL(musicIcons.playerIcon)
-                            )
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `## Xee Is Now Playing Your Favorite\n` +
+                            `> **Link Of This Song : [${track.info.title}](${trackUrl})**\n` +
+                            `> **Song Author : ${track.info.author || 'Unknown Artist'}**`
+                        )
                     )
                     // Separator
                     .addSeparatorComponents(
                         new SeparatorBuilder()
                             .setSpacing(SeparatorSpacingSize.Large)
                             .setDivider(true)
-                    )
-                    // Full-Width Song Image with Track Details
-                    .addSectionComponents(
-                        new SectionBuilder()
-                            .addTextDisplayComponents(
-                                new TextDisplayBuilder().setContent(
-                                    `\n > **Queue:** ${queueLength} Tracks` +
-                                    `\n> **Duration:** ${duration} | **Source:** ${platform} | **Volume:** ${player.volume || 100}%` +
-                                    `\n > **Requested By:** ${requester} | Made With Love By Xecute`
-                                )
-                            )
-                            .setThumbnailAccessory(
-                                new ThumbnailBuilder().setURL(artworkUrl)
-                            )
                     );
 
-                // Create traditional action rows for buttons (not part of Components V2 container)
+                // Add music card image to container if generated
+                if (musicCardBuffer && musicCardAttachment) {
+                    container.addMediaGalleryComponents(
+                        new MediaGalleryBuilder()
+                            .addItems(
+                                new MediaGalleryItemBuilder()
+                                    .setURL('attachment://xee-music.png')
+                            )
+                    );
+                }
+
+                // Add track details section
+                container.addSeparatorComponents(
+                    new SeparatorBuilder()
+                        .setSpacing(SeparatorSpacingSize.Large)
+                        .setDivider(true)
+                )
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `> **Queue:** ${queueLength} Tracks\n` +
+                            `> **Duration:** ${duration} | **Source:** ${platform} | **Volume:** ${player.volume || 100}%\n` +
+                            `> **Requested By:** ${requester} | Made With Love By Xecute`
+                        )
+                    );
+
+                // Create action rows for buttons
                 const row1 = new ActionRowBuilder()
                     .addComponents(rewindBtn, playPauseBtn, forwardBtn, skipBtn);
 
@@ -221,11 +250,19 @@ export default function initializePoru(client) {
                 const row3 = new ActionRowBuilder()
                     .addComponents(replayBtn, loopBtn, autoplayBtn, likeBtn);
 
-                // Send the now playing message
-                const nowPlayingMsg = await channel.send({
+                // Prepare message payload
+                const messagePayload = {
                     components: [container, row1, row2, row3],
                     flags: MessageFlags.IsComponentsV2
-                });
+                };
+
+                // Add music card as attachment if generated
+                if (musicCardBuffer && musicCardAttachment) {
+                    messagePayload.files = [musicCardAttachment];
+                }
+
+                // Send the Components V2 message with embedded image
+                const nowPlayingMsg = await channel.send(messagePayload);
 
                 // Store message ID in player for future updates
                 player.nowPlayingMessage = {
