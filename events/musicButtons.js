@@ -23,7 +23,7 @@ async function updateNowPlayingMessage(client, player) {
         const message = await channel?.messages.fetch(player.nowPlayingMessage.messageId);
         if (!message) return;
 
-        const track = player.current;
+        const track = player.currentTrack;
         if (!track) return;
 
         // Get current player state
@@ -325,13 +325,13 @@ export default {
                 });
             }
             else if (customId.includes('_replay_')) {
-                if (!player.current || !player.current.info) {
+                if (!player.currentTrack || !player.currentTrack.info) {
                     return interaction.reply({
                         content: '❌ No track is currently playing',
                         ephemeral: true
                     });
                 }
-                if (player.current.info.length === 0) {
+                if (player.currentTrack.info.length === 0) {
                     return interaction.reply({
                         content: '❌ Cannot replay live streams',
                         ephemeral: true
@@ -344,14 +344,14 @@ export default {
                 });
             }
             else if (customId.includes('_forward_')) {
-                if (!player.current || !player.current.info) {
+                if (!player.currentTrack || !player.currentTrack.info) {
                     return interaction.reply({
                         content: '❌ No track is currently playing',
                         ephemeral: true
                     });
                 }
                 const currentPos = player.position || 0;
-                const trackLength = player.current.info.length || 0;
+                const trackLength = player.currentTrack.info.length || 0;
                 if (trackLength === 0) {
                     return interaction.reply({
                         content: '❌ Cannot seek in live streams',
@@ -366,13 +366,13 @@ export default {
                 });
             }
             else if (customId.includes('_rewind_')) {
-                if (!player.current || !player.current.info) {
+                if (!player.currentTrack || !player.currentTrack.info) {
                     return interaction.reply({
                         content: '❌ No track is currently playing',
                         ephemeral: true
                     });
                 }
-                if (player.current.info.length === 0) {
+                if (player.currentTrack.info.length === 0) {
                     return interaction.reply({
                         content: '❌ Cannot seek in live streams',
                         ephemeral: true
@@ -387,7 +387,7 @@ export default {
                 });
             }
             else if (customId.includes('_like_')) {
-                if (!player.current || !player.current.info) {
+                if (!player.currentTrack || !player.currentTrack.info) {
                     return interaction.reply({
                         content: '❌ No track is currently playing',
                         flags: 64
@@ -403,7 +403,7 @@ export default {
                 }
 
                 const likedSongs = client.likedSongs.get(userId);
-                const track = player.current;
+                const track = player.currentTrack;
 
                 // Check if already liked
                 const alreadyLiked = likedSongs.some(s => s.url === track.info.uri);
