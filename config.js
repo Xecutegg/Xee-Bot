@@ -76,4 +76,28 @@ export default {
         INTERVAL: 15000, // 15 seconds in milliseconds (Discord recommends 15+ seconds)
         STREAMING_URL: "https://xecute.me/",
     },
+
+    MUSIC: {
+        ENABLED: true,
+        LAVALINK_NODES: [
+            {
+                name: "SecureX",
+                password: "lundlelemera",
+                host: "72.60.118.139",
+                port: 1717,
+                secure: false,
+            },
+        ],
+        MAX_SEARCH_RESULTS: 10,
+        DEFAULT_SOURCE: "ytsearch",
+    },
+
+    GIVEAWAYS: {
+        ENABLED: false,
+    },
+
+    INTERACTIONS: {
+        SLASH: true,
+        CONTEXT: true,
+    },
 };

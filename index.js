@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
 import setupDatabase from './database/index.js';
+import initializePoru from './handlers/poru.js';
 
 dotenvConfig();
 
@@ -16,11 +17,17 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildVoiceStates, // Required for music
     ],
 });
 
 // Initialize commands collection
 client.commands = new Collection();
+
+// Initialize Poru music system
+client.once('ready', () => {
+    initializePoru(client);
+});
 
 // Setup database (optional - only if MONGO_URI is provided)
 if (process.env.MONGO_URI) {
