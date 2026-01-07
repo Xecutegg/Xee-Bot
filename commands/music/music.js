@@ -3,8 +3,8 @@ import { getYouTubeResults } from '../../ytsearch.js';
 import musicIcons from '../../UI/icons/musicicons.js';
 
 export default {
-    name: 'music',
-    description: 'Music player commands with subcommands.',
+    name: 'play',
+    description: 'Play music in your voice channel',
     category: 'MUSIC',
     botperms: ['SendMessages', 'Connect', 'Speak'],
     userperms: ['SendMessages'],
@@ -16,197 +16,49 @@ export default {
 
         if (!channel) {
             return message.reply({
-                embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ You need to be in a voice channel to use music commands.')],
+                embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ You need to be in a voice channel to play music.')],
             });
         }
-
-        if (!args[0]) {
-            const embed = new EmbedBuilder()
-                .setColor('#DC92FF')
-                .setTitle('🎵 Music Commands')
-                .setDescription('Available commands:')
-                .addFields(
-                    { name: '.music play <song name>', value: 'Play a song by searching', inline: false },
-                    { name: '.music pause', value: 'Pause the current song', inline: false },
-                    { name: '.music resume', value: 'Resume the paused song', inline: false },
-                    { name: '.music skip', value: 'Skip the current song', inline: false },
-                    { name: '.music stop', value: 'Stop playing and clear queue', inline: false },
-                    { name: '.music queue', value: 'Show the music queue', inline: false },
-                    { name: '.music nowplaying', value: 'Show current song', inline: false },
-                    { name: '.music volume <0-100>', value: 'Set volume level', inline: false },
-                    { name: '.music shuffle', value: 'Shuffle the queue', inline: false }
-                );
-
-            return message.reply({ embeds: [embed] });
-        }
-
-        const subcommand = args[0].toLowerCase();
-        const query = args.slice(1).join(' ');
 
         if (!client.poru) {
             return message.reply('❌ **Music system is not available!**\nLavalink service is not connected. Please contact an administrator.');
         }
 
+        // Get the song query
+        const query = args.join(' ');
+
+        if (!query) {
+            return message.reply('Please provide a song name or URL!\nExample: `.play never gonna give you up`');
+        }
+
         let player = client.poru.players.get(message.guild.id);
+        const statusMessage = await message.reply('🔍 Searching for songs...');
 
         try {
-            switch (subcommand) {
-                case 'play':
-                    if (!query) {
-                        return message.reply('Please provide a song to search for!\nExample: `.music play never gonna give you up`');
-                    }
-
-                    const statusMessage = await message.reply('🔍 Searching for songs...');
-
-                    // Check if query is a direct YouTube URL
-                    if (isYouTubeURL(query)) {
-                        return await playDirectURL(client, message, query, player, channel, statusMessage);
-                    }
-
-                    // Search YouTube for results
-                    const ytRes = await getYouTubeResults(query);
-
-                    if (!ytRes || ytRes.length === 0) {
-                        return statusMessage.edit({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('🚫 No songs found for your query.')],
-                        });
-                    }
-
-                    // Delete the searching message
-                    await statusMessage.delete().catch(() => { });
-
-                    // Show search results with select menu
-                    await showSearchResults(client, message, query, ytRes, player, channel);
-                    break;
-
-                case 'pause':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-                    player.pause();
-                    await message.reply('⏸️ The song has been paused.');
-                    break;
-
-                case 'resume':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-                    player.pause();
-                    await message.reply('▶️ The song has been resumed.');
-                    break;
-
-                case 'skip':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-                    player.stop();
-                    await message.reply('⏭️ The song has been skipped.');
-                    break;
-
-                case 'stop':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-                    player.destroy();
-                    await message.reply('⏹️ The music has been stopped, and the queue has been cleared.');
-                    break;
-
-                case 'queue':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-
-                    const queue = player.queue;
-                    if (!queue || queue.length === 0) {
-                        return message.reply('❌ The queue is empty.');
-                    }
-
-                    const formattedQueue = queue.slice(0, 10).map((track, i) => `${i + 1}. **${track.info.title}**`).join('\n');
-
-                    const queueEmbed = new EmbedBuilder()
-                        .setColor('#DC92FF')
-                        .setTitle('🎶 Current Queue')
-                        .setDescription(formattedQueue);
-
-                    if (queue.length > 10) {
-                        queueEmbed.setFooter({ text: `And ${queue.length - 10} more songs...` });
-                    }
-
-                    await message.reply({ embeds: [queueEmbed] });
-                    break;
-
-                case 'nowplaying':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-
-                    const currentTrack = player.current;
-                    if (!currentTrack) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No track currently playing.')],
-                        });
-                    }
-
-                    const npEmbed = new EmbedBuilder()
-                        .setColor('#DC92FF')
-                        .setTitle('🎵 Now Playing')
-                        .setDescription(`**[${currentTrack.info.title}](${currentTrack.info.uri})**`);
-
-                    if (currentTrack.info.artwork) {
-                        npEmbed.setThumbnail(currentTrack.info.artwork);
-                    }
-
-                    await message.reply({ embeds: [npEmbed] });
-                    break;
-
-                case 'volume':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-
-                    const volume = parseInt(query);
-                    if (isNaN(volume) || volume < 0 || volume > 100) {
-                        return message.reply('Please provide a valid volume level (0-100)!\nExample: `.music volume 50`');
-                    }
-
-                    player.setVolume(volume);
-                    await message.reply(`🔊 Volume set to **${volume}%**.`);
-                    break;
-
-                case 'shuffle':
-                    if (!player) {
-                        return message.reply({
-                            embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('❌ No active music player.')],
-                        });
-                    }
-
-                    player.queue.shuffle();
-                    await message.reply('🔀 The queue has been shuffled.');
-                    break;
-
-                default:
-                    await message.reply(`Unknown subcommand: \`${subcommand}\`\nUse \`.music\` to see available commands.`);
-                    break;
+            // Check if query is a direct YouTube URL
+            if (isYouTubeURL(query)) {
+                return await playDirectURL(client, message, query, player, channel, statusMessage);
             }
+
+            // Search YouTube for results
+            const ytRes = await getYouTubeResults(query);
+
+            if (!ytRes || ytRes.length === 0) {
+                return statusMessage.edit({
+                    embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('🚫 No songs found for your query.')],
+                });
+            }
+
+            // Delete the searching message
+            await statusMessage.delete().catch(() => { });
+
+            // Show search results with select menu
+            await showSearchResults(client, message, query, ytRes, player, channel);
         } catch (error) {
             console.error('Prefix command error:', error);
-            await message.reply({
+            await statusMessage.edit({
                 embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('🚫 An error occurred while processing your request.')],
-            });
+            }).catch(() => { });
         }
     },
 };
