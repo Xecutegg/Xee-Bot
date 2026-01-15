@@ -226,7 +226,7 @@ async function showSearchResults(client, message, query, results, player, channe
 
     const selectMenu = new StringSelectMenuBuilder()
         .setCustomId(`music_search_${message.author.id}`)
-        .setPlaceholder('🎶 Select songs to add to queue (1-25)...')
+        .setPlaceholder('Select Songs to Add to Queue')
         .setMinValues(1)
         .setMaxValues(Math.min(25, displayResults.length))
         .addOptions(options);
@@ -274,11 +274,10 @@ async function showSearchResults(client, message, query, results, player, channe
                 .setColor('#DC92FF')
                 .setAuthor({ name: '✅ Tracks Added to Queue', iconURL: musicIcons.correctIcon })
                 .setDescription(
-                    `<:music:1379761366696591461> Successfully added **${addedTracks.length}** song${addedTracks.length > 1 ? 's' : ''} to the queue\n\n` +
-                    trackNames + moreText
+                    `<:music:1379761366696591461> Successfully Added **${addedtracks.length}** Song${addedtracks.length > 1 ? 'S' : ''} to the Queue`
                 )
                 .setFooter({
-                    text: `Requested by: ${interaction.user.username}`,
+                    text: `Requested by ${interaction.user.username}`,
                     iconURL: interaction.user.displayAvatarURL()
                 })
                 .setTimestamp();
