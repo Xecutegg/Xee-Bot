@@ -275,7 +275,7 @@ async function showSearchResults(client, message, query, results, player, channe
                 .setColor('#DC92FF')
                 .setAuthor({ name: '✅ Tracks Added to Queue', iconURL: musicIcons.correctIcon })
                 .setDescription(
-                    `<:music:1379761366696591461> Successfully Added **${addedtracks.length}** Song${addedtracks.length > 1 ? 'S' : ''} to the Queue`
+                    `<:music:1379761366696591461> Successfully Added **${addedTracks.length}** Song${addedTracks.length > 1 ? 'S' : ''} to the Queue`
                 )
                 .setFooter({
                     text: `Requested by ${interaction.user.username}`,

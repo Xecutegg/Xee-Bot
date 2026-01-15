@@ -58,28 +58,9 @@ const formatDuration = (seconds) => {
 };
 
 /**
- * Check if maxresdefault thumbnail (1920x1080) exists for a video
- * @param {string} videoId - YouTube video ID
- * @returns {Promise<boolean>} Whether HD thumbnail exists
- */
-const checkHDThumbnail = async (videoId) => {
-    try {
-        const url = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
-        const response = await fetch(url, { method: 'HEAD' });
-        // YouTube returns 200 even for placeholder images, check content-length
-        const contentLength = response.headers.get('content-length');
-        // Placeholder images are typically small (~1-2KB), real HD thumbnails are larger
-        return response.ok && contentLength && parseInt(contentLength) > 10000;
-    } catch {
-        return false;
-    }
-};
-
-/**
  * Search YouTube Music with fallback to regular YouTube
- * Only returns videos with 1920x1080 thumbnails
  * @param {string} query - Search query
- * @returns {Promise<Array>} Array of video results with HD thumbnails
+ * @returns {Promise<Array>} Array of video results
  */
 const getYouTubeResults = async (query) => {
     // Input validation
@@ -103,11 +84,11 @@ const getYouTubeResults = async (query) => {
                 });
             } catch (searchError) {
                 console.error("YouTube search failed", searchError);
-                return []; // Return empty array if search fails
+                return [];
             }
 
             data = results.items
-                .filter((video) => !video.isLive && video.id) // Ensure video.id exists
+                .filter((video) => !video.isLive && video.id)
                 .map((video) => {
                     const videoId = video.id;
                     return {
@@ -120,22 +101,11 @@ const getYouTubeResults = async (query) => {
                 });
         }
 
-        // Filter for only videos with HD (1920x1080) thumbnails
-        const hdResults = [];
-        for (const item of data) {
-            const videoId = item.videoId;
-            if (videoId) {
-                const hasHD = await checkHDThumbnail(videoId);
-                if (hasHD) {
-                    item.thumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
-                    hdResults.push(item);
-                }
-            }
-            // Limit to 10 HD results to avoid too many requests
-            if (hdResults.length >= 10) break;
-        }
-
-        return hdResults;
+        // Return results immediately without HD checking (for speed)
+        return data.slice(0, 25).map(item => ({
+            ...item,
+            thumbnail: `https://i.ytimg.com/vi/${item.videoId}/maxresdefault.jpg`
+        }));
     } catch (error) {
         console.error("YouTube search completely failed:", error);
         return [];
