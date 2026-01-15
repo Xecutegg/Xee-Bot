@@ -40,7 +40,7 @@ export async function getUpNext(videoId, requester, limit = 10) {
                     }
 
                     allTracks.push({
-                        track: `youtube:${relatedVideo.id}`,
+                        track: `YouTube:${relatedVideo.id}`,
                         info: {
                             identifier: relatedVideo.id,
                             title: relatedVideo.title || 'Unknown Title',
@@ -49,7 +49,7 @@ export async function getUpNext(videoId, requester, limit = 10) {
                             uri: `https://www.youtube.com/watch?v=${relatedVideo.id}`,
                             artworkUrl: `https://i.ytimg.com/vi/${relatedVideo.id}/maxresdefault.jpg`,
                             thumbnail: `https://i.ytimg.com/vi/${relatedVideo.id}/maxresdefault.jpg`,
-                            sourceName: 'youtube',
+                            sourceName: 'YouTube',
                             requester: requester
                         },
                         autoplay: true,
