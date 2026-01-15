@@ -14,7 +14,7 @@ export default {
   description: "Clear all warnings from a user",
   category: "MOD",
   botperms: ["ViewChannel", "SendMessages", "EmbedLinks"],
-  userperms: ["ManageGuild"], // Higher permission required for clearing all warnings
+  userperms: ["ManageGuild"], 
   cooldown: 5,
   aliases: ["clearwarns", "resetwarnings"],
   is_premium: false,

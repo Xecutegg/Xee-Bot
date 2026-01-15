@@ -132,7 +132,7 @@ async function getHelpMenu({ client, guild, user, prefix = "!" }) {
       `${config.mod_emoji} | Moderation Commands`,
       `${config.utlis_emoji} | Utility Commands`,
       `${config.info_emoji} | Information Commands`,
-      `${config.verify_emoji} | ID Password Management ${config.new_emoji}`,
+      `${config.verify_emoji} | Password Management ${config.new_emoji}`,
     ];
 
     const embed = new EmbedBuilder()
@@ -143,14 +143,14 @@ async function getHelpMenu({ client, guild, user, prefix = "!" }) {
       .addFields({
         name: "__**Basic Information:**__",
         value: [
-          `**Server Prefix:** \`${prefix}\``,
+          `**Server Prefix:** \`${config.prefix}\``,
           `**Total Commands:** \`${totalCommands}\``,
           `**[Invite ${client.user.username}](https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=2113268958&scope=bot)** | **[Support Server](${config.SUPPORT_SERVER || 'https://discord.gg/support'})**`,
           "",
           "❓ **How to use me?**",
           "```",
-          `${prefix}help <command/category>`,
-          `For example: ${prefix}help scrims`,
+          `${config.prefix}help <command/category>`,
+          `For example: ${config.prefix}help scrims`,
           "```",
         ].join("\n"),
         inline: false,
@@ -173,13 +173,7 @@ async function getHelpMenu({ client, guild, user, prefix = "!" }) {
       });
 
     // Generate dropdown options safely
-    const options = [
-      {
-        label: "Home",
-        value: "HOME",
-        description: "Main help menu",
-      },
-    ];
+    const options = [];
 
     // Add categories that are enabled and not hidden
     if (Categories && typeof Categories === "object") {
@@ -240,14 +234,6 @@ async function createHelpView(message, userId, prefix) {
       try {
         embeds = [];
         options = [];
-
-        // Home option
-        options.push({
-          label: "🏠 Home",
-          value: "HOME",
-          description: "Main help menu",
-          emoji: "🏠",
-        });
 
         // Add home embed
         const user = await message.client.users.fetch(userId).catch(() => ({
