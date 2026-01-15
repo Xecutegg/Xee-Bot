@@ -24,7 +24,8 @@ export default {
     category: 'MUSIC',
     botperms: ['SendMessages', 'Connect', 'Speak'],
     userperms: ['SendMessages'],
-    is_premium: false,
+    is_premium: true,
+    aliases: ['p'],
     cooldown: 5,
 
     async execute(client, message, args) {
