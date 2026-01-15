@@ -24,6 +24,12 @@ import { dynamicCard } from "../UI/dynamicCard.js";
  */
 export default function initializePoru(client) {
     try {
+        // Check if poru is already initialized
+        if (client.poru) {
+            console.log('⚠️ Poru already initialized, skipping...');
+            return client.poru;
+        }
+
         // Validate lavalink nodes configuration
         if (!config.MUSIC?.LAVALINK_NODES || config.MUSIC.LAVALINK_NODES.length === 0) {
             console.error('❌ No Lavalink nodes configured');

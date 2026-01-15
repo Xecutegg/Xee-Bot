@@ -108,7 +108,7 @@ export default {
         new ButtonBuilder()
           .setLabel("Support Server")
           .setStyle(ButtonStyle.Link)
-          .setURL("https://discord.gg/J8gXBSt3e5"),
+          .setURL("https://discord.gg/yebpgrwdBh"),
         new ButtonBuilder()
           .setLabel("Developer")
           .setStyle(ButtonStyle.Link)

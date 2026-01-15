@@ -1,6 +1,22 @@
-import { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, StringSelectMenuBuilder, ComponentType } from 'discord.js';
+import {
+    EmbedBuilder,
+    PermissionFlagsBits,
+    ActionRowBuilder,
+    StringSelectMenuBuilder,
+    ComponentType,
+    MessageFlags,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    ButtonBuilder,
+    ButtonStyle
+} from 'discord.js';
 import { getYouTubeResults } from '../../ytsearch.js';
 import musicIcons from '../../UI/icons/musicicons.js';
+import config from '../../config.js';
 
 export default {
     name: 'play',
@@ -32,31 +48,32 @@ export default {
         }
 
         let player = client.poru.players.get(message.guild.id);
-        const statusMessage = await message.reply('🔍 Searching for songs...');
 
         try {
             // Check if query is a direct YouTube URL
             if (isYouTubeURL(query)) {
-                return await playDirectURL(client, message, query, player, channel, statusMessage);
+                return await playDirectURL(client, message, query, player, channel);
             }
+
+            // Show loading message while searching
+            const loadingMsg = await message.reply(`${config.loading_emoji} Searching for songs...`);
 
             // Search YouTube for results
             const ytRes = await getYouTubeResults(query);
 
             if (!ytRes || ytRes.length === 0) {
-                return statusMessage.edit({
+                return loadingMsg.edit({
+                    content: null,
                     embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('🚫 No songs found for your query.')],
                 });
             }
 
-            // Delete the searching message
-            await statusMessage.delete().catch(() => { });
-
-            // Show search results with select menu
+            // Delete loading message and show search results
+            await loadingMsg.delete().catch(() => { });
             await showSearchResults(client, message, query, ytRes, player, channel);
         } catch (error) {
             console.error('Prefix command error:', error);
-            await statusMessage.edit({
+            await message.reply({
                 embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('🚫 An error occurred while processing your request.')],
             }).catch(() => { });
         }
@@ -75,7 +92,7 @@ function isYouTubeURL(query) {
 /**
  * Play music directly from YouTube URL (video or playlist)
  */
-async function playDirectURL(client, message, url, player, channel, statusMessage) {
+async function playDirectURL(client, message, url, player, channel) {
     try {
         if (!player) {
             try {
@@ -86,7 +103,7 @@ async function playDirectURL(client, message, url, player, channel, statusMessag
                     deaf: true
                 });
             } catch (error) {
-                return statusMessage.edit('❌ Failed to connect to the voice channel.');
+                return message.reply('❌ Failed to connect to the voice channel.');
             }
         }
 
@@ -97,7 +114,7 @@ async function playDirectURL(client, message, url, player, channel, statusMessag
         });
 
         if (!res || !res.tracks || res.tracks.length === 0) {
-            return statusMessage.edit({
+            return message.reply({
                 embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('🚫 No tracks found from the provided URL.')],
             });
         }
@@ -133,59 +150,85 @@ async function playDirectURL(client, message, url, player, channel, statusMessag
             embed.setDescription(`<:music:1379761366696591461> | Added **${addedCount} tracks** to the queue`);
         }
 
-        await statusMessage.edit({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     } catch (error) {
         console.error('Error playing direct URL:', error);
-        await statusMessage.edit({
+        await message.reply({
             embeds: [new EmbedBuilder().setColor('#FF0000').setDescription('🚫 An error occurred while trying to play from the URL.')],
-        });
+        }).catch(() => { });
     }
 }
 
 async function showSearchResults(client, message, query, results, player, channel) {
-    const displayResults = results.slice(0, 10);
+    const displayResults = results.slice(0, 25);
+    const top3Results = displayResults.slice(0, 3);
 
-    // Create embed description with numbered list
-    const description = displayResults
-        .map((result, index) => {
-            const title = result.title || 'Unknown Title';
-            const duration = result.duration || '0:00';
-            const truncatedTitle = title.length > 20 ? title.slice(0, 20) + "..." : title;
-            return `${index + 1}. **[\`${truncatedTitle}\`](https://discord.gg/J8gXBSt3e5)** - **\`${duration}\`**`;
-        })
-        .join('\n');
+    // Create Components V2 Container (max 10 components) - optimized
+    const container = new ContainerBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `## Search Results for: ${query}\n` +
+                `> Found **${displayResults.length}** Songs • Select from dropdown`
+            )
+        )
+        .addSeparatorComponents(
+            new SeparatorBuilder()
+                .setSpacing(SeparatorSpacingSize.Large)
+                .setDivider(true)
+        );
 
-    const embed = new EmbedBuilder()
-        .setColor('#DC92FF')
-        .setAuthor({
-            name: `🔍 Search Results for: ${query}`,
-            iconURL: message.author.displayAvatarURL()
-        })
-        .setDescription(description)
-        .setFooter({
-            text: `Requested by ${message.author.username} • Select songs to add to queue`,
-            iconURL: message.author.displayAvatarURL()
-        })
-        .setTimestamp();
+    // Add Top 3 Songs with Thumbnails (only 3 songs to stay under 10 component limit)
+    top3Results.forEach((result, index) => {
+        const title = result.title || 'Unknown Title';
+        const duration = result.duration || '0:00';
+        const artist = result.artists || 'Unknown Artist';
+        const thumbnailUrl = result.thumbnail || musicIcons.playerIcon;
 
-    // Create select menu options
+        // Add song section with thumbnail on right
+        container.addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `### ${config.dot_emoji} ${title}\n` +
+                        `${config.dot_emoji} **Artist :** ${artist}\n` +
+                        `${config.dot_emoji} **Duration :** ${duration}`
+                    )
+                )
+                .setThumbnailAccessory(
+                    new ThumbnailBuilder().setURL(thumbnailUrl)
+                )
+        );
+    });
+
+    // Add footer
+    container.addSeparatorComponents(
+        new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Large)
+            .setDivider(true)
+    ).addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `Requested by ${message.author.username} • ${displayResults.length > 3 ? displayResults.length - 3 + ' more in dropdown' : 'Select songs below'}`
+        )
+    );
+
+    // Create select menu options for dropdown (songs 4-25)
     const options = displayResults.map((result, index) => {
         const title = result.title || 'Unknown Title';
         const truncatedTitle = title.length > 100 ? title.slice(0, 97) + "..." : title;
 
         return {
-            label: truncatedTitle,
-            description: `Duration: ${result.duration || '0:00'} | ${result.artists || 'Unknown Artist'}`,
+            label: `${index + 1}. ${truncatedTitle}`,
+            description: `${result.duration || '0:00'} • ${result.artists || 'Unknown Artist'}`,
             value: index.toString(),
-            emoji: '🎵'
+            emoji: index < 3 ? `${config.premium_emoji}` : `${config.dot_emoji}`
         };
     });
 
     const selectMenu = new StringSelectMenuBuilder()
         .setCustomId(`music_search_${message.author.id}`)
-        .setPlaceholder('🎶 Select songs to add to queue...')
+        .setPlaceholder('🎶 Select songs to add to queue (1-25)...')
         .setMinValues(1)
-        .setMaxValues(Math.min(10, displayResults.length))
+        .setMaxValues(Math.min(25, displayResults.length))
         .addOptions(options);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -201,10 +244,10 @@ async function showSearchResults(client, message, query, results, player, channe
         timestamp: Date.now()
     });
 
-    // Send the embed with select menu
+    // Send the Components V2 message with select menu
     const searchMessage = await message.channel.send({
-        embeds: [embed],
-        components: [row]
+        components: [container, row],
+        flags: MessageFlags.IsComponentsV2
     });
 
     // Set up collector for the select menu
@@ -224,12 +267,21 @@ async function showSearchResults(client, message, query, results, player, channe
         const addedTracks = await addTracksToQueue(client, message, selectedTracks, player, channel);
 
         if (addedTracks.length > 0) {
-            const trackNames = addedTracks.map(track => `• ${track.title}`).join('\n');
+            const trackNames = addedTracks.slice(0, 5).map(track => `• ${track.title}`).join('\n');
+            const moreText = addedTracks.length > 5 ? `\n...and ${addedTracks.length - 5} more` : '';
+
             const embed = new EmbedBuilder()
                 .setColor('#DC92FF')
-                .setAuthor({ name: 'Track Added', iconURL: musicIcons.correctIcon })
-                .setFooter({ text: `Requested by: ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() })
-                .setDescription(`<:music:1379761366696591461> | Added **${addedTracks.length} Music's** to the Playlist\n${trackNames}`);
+                .setAuthor({ name: '✅ Tracks Added to Queue', iconURL: musicIcons.correctIcon })
+                .setDescription(
+                    `<:music:1379761366696591461> Successfully added **${addedTracks.length}** song${addedTracks.length > 1 ? 's' : ''} to the queue\n\n` +
+                    trackNames + moreText
+                )
+                .setFooter({
+                    text: `Requested by: ${interaction.user.username}`,
+                    iconURL: interaction.user.displayAvatarURL()
+                })
+                .setTimestamp();
 
             await interaction.editReply({
                 embeds: [embed],
@@ -244,18 +296,20 @@ async function showSearchResults(client, message, query, results, player, channe
 
         // Disable the select menu after use
         selectMenu.setDisabled(true);
-        await searchMessage.edit({ components: [new ActionRowBuilder().addComponents(selectMenu)] });
+        const disabledRow = new ActionRowBuilder().addComponents(selectMenu);
+        await searchMessage.edit({ components: [container, disabledRow] }).catch(() => { });
     });
 
-    collector.on('end', async () => {
+    collector.on('end', async (collected, reason) => {
         // Clean up cache
         client.searchCache?.delete(`${message.author.id}_${message.guild.id}`);
 
-        // Disable select menu on timeout
-        selectMenu.setDisabled(true);
-        await searchMessage.edit({
-            components: [new ActionRowBuilder().addComponents(selectMenu)]
-        }).catch(() => { });
+        // Only disable menu if no interaction was collected
+        if (reason === 'time' && collected.size === 0) {
+            selectMenu.setDisabled(true);
+            const disabledRow = new ActionRowBuilder().addComponents(selectMenu);
+            await searchMessage.edit({ components: [container, disabledRow] }).catch(() => { });
+        }
     });
 }
 

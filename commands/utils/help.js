@@ -29,16 +29,6 @@ export default {
       const guild_data = await getSettings(message.guild.id);
       const prefix = guild_data?.prefix || config.prefix || '!';
 
-      // Loading embed
-      const loadingEmbed = new EmbedBuilder()
-        .setDescription(`${config.loading_emoji || '⏳'} **Loading Help Commands...**`)
-        .setColor(config.embed_color || '#0099ff');
-
-      const loadingMsg = await message.reply({ embeds: [loadingEmbed] });
-
-      // Brief loading delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       if (!args[0]) {
         const response = await getHelpMenu({
           client,
@@ -46,8 +36,8 @@ export default {
           user: message.author,
           prefix,
         });
-        await loadingMsg.edit(response);
-        return await createHelpView(loadingMsg, message.author.id, prefix);
+        const msg = await message.reply(response);
+        return await createHelpView(msg, message.author.id, prefix);
       }
 
       // Handle specific command or category
@@ -59,7 +49,7 @@ export default {
 
       if (cmd && !cmd.isEvent && !cmd.type && !cmd.devOnly) {
         const embed = getCommandUsage(cmd, prefix, args[0]);
-        await loadingMsg.edit({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
         return;
       }
 
@@ -80,7 +70,7 @@ export default {
           prefix,
           message.author
         );
-        await loadingMsg.edit({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
         return;
       }
 
@@ -111,7 +101,7 @@ export default {
         });
       }
 
-      await loadingMsg.edit({ embeds: [notFoundEmbed] });
+      await message.reply({ embeds: [notFoundEmbed] });
     } catch (error) {
       console.error("Help command error:", error);
       await message
@@ -163,7 +153,7 @@ async function getHelpMenu({ client, guild, user, prefix = "!" }) {
       .addFields({
         name: "__**Navigation Help**__",
         value: [
-          `${config.dot_emoji} For support, Join Our **[Support Server](https://discord.gg/J8gXBSt3e5)**`,
+          `${config.dot_emoji} For support, Join Our **[Support Server](https://discord.gg/yebpgrwdBh)**`,
         ].join("\n"),
         inline: false,
       })
