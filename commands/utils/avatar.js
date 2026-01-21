@@ -30,7 +30,7 @@ export default {
             .addSectionComponents(
                 new SectionBuilder()
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`Or Aa geya na *Madarchod** wapas se ladki dhekne? Dhek Dhek kaise Dhekne Aya h ${targetUser.tag} ki Pic Chal Confirm Krde Dikha Deta hu!!`)
+                        new TextDisplayBuilder().setContent(`Or Aa geya na **Madarchod** wapas se ladki dhekne? Dhek Dhek kaise Dhekne Aya h **${targetUser.tag}** ki Pic Chal Confirm Krde Dikha Deta hu!!`)
                     )
                     .setThumbnailAccessory(new ThumbnailBuilder().setURL(message.author.displayAvatarURL({ size: 128, dynamic: true })))
             )
