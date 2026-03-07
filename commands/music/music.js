@@ -215,11 +215,16 @@ async function showSearchResults(client, message, query, results, player, channe
     // Create select menu options for dropdown (songs 4-25)
     const options = displayResults.map((result, index) => {
         const title = result.title || 'Unknown Title';
-        const truncatedTitle = title.length > 100 ? title.slice(0, 97) + "..." : title;
+        const prefix = `${index + 1}. `;
+        const maxLabelLength = 100 - prefix.length;
+        const truncatedTitle = title.length > maxLabelLength ? title.slice(0, Math.max(0, maxLabelLength - 3)) + '...' : title;
+
+        let description = `${result.duration || '0:00'} • ${result.artists || 'Unknown Artist'}`;
+        if (description.length > 100) description = description.slice(0, 97) + '...';
 
         return {
-            label: `${index + 1}. ${truncatedTitle}`,
-            description: `${result.duration || '0:00'} • ${result.artists || 'Unknown Artist'}`,
+            label: `${prefix}${truncatedTitle}`,
+            description,
             value: index.toString(),
             emoji: index < 3 ? `${config.premium_emoji}` : `${config.dot_emoji}`
         };

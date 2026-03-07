@@ -84,7 +84,7 @@ export default {
                 name: "SecureX",
                 password: "lundlelemera",
                 host: "72.60.118.139",
-                port: 1717,
+                port: 2333,
                 secure: false,
             },
         ],
