@@ -81,12 +81,12 @@ export default {
         ENABLED: true,
         LAVALINK_NODES: [
             {
-                name: "SecureX",
-                password: "lundlelemera",
-                host: "72.60.118.139",
-                port: 2333,
-                secure: false,
-            },
+                name: "Xeee",
+                password: "glace",
+                host: "de-01.strixnodes.com",
+                port: 2010,
+                secure: false
+            }
         ],
         MAX_SEARCH_RESULTS: 10,
         DEFAULT_SOURCE: "ytsearch",
