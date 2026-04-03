@@ -16,6 +16,9 @@ import config from "../../config.js";
 
 const IDLE_TIMEOUT = 300; // 5 minutes
 
+// allow mention off for conponent v2
+
+
 export default {
   name: "help",
   description: "Advanced help menu with category management",
@@ -36,7 +39,10 @@ export default {
           user: message.author,
           prefix,
         });
-        const msg = await message.reply(response);
+        const msg = await message.reply({
+          ...response,
+          allowedMentions: { parse: [], repliedUser: false },
+        });
         return await createHelpView(msg, message.author.id, prefix);
       }
 
@@ -49,7 +55,7 @@ export default {
 
       if (cmd && !cmd.isEvent && !cmd.type && !cmd.devOnly) {
         const embed = getCommandUsage(cmd, prefix, args[0]);
-        await message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed], allowedMentions: { parse: [], repliedUser: false } });
         return;
       }
 
@@ -70,7 +76,7 @@ export default {
           prefix,
           message.author
         );
-        await message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed], allowedMentions: { parse: [], repliedUser: false } });
         return;
       }
 
@@ -101,11 +107,11 @@ export default {
         });
       }
 
-      await message.reply({ embeds: [notFoundEmbed] });
+      await message.reply({ embeds: [notFoundEmbed], allowedMentions: { parse: [], repliedUser: false } });
     } catch (error) {
       console.error("Help command error:", error);
       await message
-        .reply("An error occurred while processing the help command.")
+        .reply({ content: "An error occurred while processing the help command.", allowedMentions: { parse: [], repliedUser: false } })
         .catch(() => { });
     }
   },
@@ -367,7 +373,8 @@ async function createHelpView(message, userId, prefix) {
           return interaction.reply({
             content:
               "❌ This help menu can only be used by the person who initiated the command.",
-            flags: 64,
+            ephemeral: true,
+            allowedMentions: { parse: [] },
           });
         }
 
@@ -418,6 +425,7 @@ async function createHelpView(message, userId, prefix) {
             await message.edit({
               embeds: [currentEmbed],
               components: [dropdown],
+              allowedMentions: { parse: [], repliedUser: false },
             });
           } catch (editError) {
             console.log("Failed to edit help message:", editError.message);
@@ -441,6 +449,7 @@ async function createHelpView(message, userId, prefix) {
             .edit({
               embeds: [timeoutEmbed],
               components: [],
+              allowedMentions: { parse: [], repliedUser: false },
             })
             .catch((error) => {
               console.log("Failed to edit message on timeout:", error.message);
