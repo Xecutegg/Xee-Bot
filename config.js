@@ -2,7 +2,7 @@ export default {
     prefix: ".",
     devs: ["162213250719547392", "901388818194780230"],
     color: "Red",
-    link: "https://xecute.me",
+    link: "https://founder.onedreamesports.in",
     SUPPORT_SERVER: "https://discord.gg/yebpgrwdBh",
 
     dot_emoji: "<:dot:1379755442879594528>",

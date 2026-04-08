@@ -93,7 +93,7 @@ export default {
 
                 const roleInput = new TextInputBuilder()
                     .setCustomId('roleid')
-                    .setLabel('Role ID (Optional)')
+                    .setLabel('Role ID')
                     .setStyle(TextInputStyle.Short)
                     .setPlaceholder('Enter the role ID to mention')
                     .setRequired(true);
@@ -250,23 +250,80 @@ export default {
                         });
                     }
 
-                    // Send to target channel with role mention if provided
-                    const messageContent = roleId ? `<@&${roleId}>` : '';
-                    await targetChannel.send({
-                        content: messageContent,
-                        components: originalMessage.components,
-                        flags: MessageFlags.IsComponentsV2
+                    // Extract ID and Password from the original message
+                    let userId = 'N/A';
+                    let userPassword = 'N/A';
+
+                    if (originalMessage.components && originalMessage.components.length > 0) {
+                        const messageContent = originalMessage.components[0]?.components || [];
+                        for (const component of messageContent) {
+                            if (component.data?.content) {
+                                const content = component.data.content;
+                                const idMatch = content.match(/ID\s*:\s*([^\n]+)/);
+                                const passMatch = content.match(/Password\s*:\s*([^\n]+)/);
+                                if (idMatch) userId = idMatch[1].trim();
+                                if (passMatch) userPassword = passMatch[1].trim();
+                            }
+                        }
+                    }
+
+                    // Get the IDP data from database to resend with same format
+                    const db = await Idp.findOne({
+                        channelID: interaction.channel.id,
+                        guildID: interaction.guild.id
                     });
 
+                    if (db) {
+                        // Recreate the Components V2 container same as original
+                        const container = new ContainerBuilder()
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `# ONE DREAM T3 SCRIMS IDP`
+                                )
+                            )
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `\`\`\`\n` +
+                                    `ID : ${userId}\n` +
+                                    `Password : ${userPassword}\n` +
+                                    `Game Map : ${db.map || 'N/A'}\n` +
+                                    `Start Time: ${db.startTime || 'N/A'}\n\`\`\`\n` +
+                                    `${db.message || 'No message provided'}`
+                                )
+                            );
+
+                        // Add role mention if roleID exists
+                        if (roleId) {
+                            container.addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `<@&${roleId}>`
+                                )
+                            );
+                        }
+
+                        // Add forwarded by text
+                        container.addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `*Forwarded by ${interaction.user.username}*`
+                            )
+                        );
+
+                        await targetChannel.send({
+                            components: [container],
+                            flags: MessageFlags.IsComponentsV2
+                        });
+                    }
+
                     await interaction.editReply({
-                        content: `✅ IDP sent successfully to <#${channelId}>!`,
+                        content: `${config.check_emoji} | Done Bhai IDP Send Kr Diya Ab Mere Malik Ko Paise Dedo [Check kro](https://founder.onedreamesports.in)`,
                         flags: 64
                     });
 
                 } catch (error) {
                     console.error('Error sending to channel:', error);
+                    console.error('Error details:', error.message);
                     await interaction.editReply({
-                        content: '❌ Failed to send IDP. Make sure the channel ID is correct and bot has access!',
+                        content: `❌ Error: ${error.message}`,
                         flags: 64
                     });
                 }
