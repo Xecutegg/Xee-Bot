@@ -200,7 +200,7 @@ export default {
 
             if (interaction.customId.startsWith('sendtochannel_')) {
                 const hasAdmin = interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
-                const hasRequiredRole = interaction.member?.roles?.cache.has('1384526510064533535');
+                const hasRequiredRole = interaction.member?.roles?.cache.has('1384526510064533535') || interaction.member?.roles?.cache.has('1487115999710019594');
 
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
