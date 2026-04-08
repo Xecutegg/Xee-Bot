@@ -91,8 +91,16 @@ export default {
                     .setPlaceholder('Enter the channel ID')
                     .setRequired(true);
 
+                const roleInput = new TextInputBuilder()
+                    .setCustomId('roleid')
+                    .setLabel('Role ID (Optional)')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Enter the role ID to mention')
+                    .setRequired(true);
+
                 const firstRow = new ActionRowBuilder().addComponents(channelInput);
-                modal.addComponents(firstRow);
+                const secondRow = new ActionRowBuilder().addComponents(roleInput);
+                modal.addComponents(firstRow, secondRow);
 
                 try {
                     await interaction.showModal(modal);
@@ -213,6 +221,7 @@ export default {
 
                 const messageId = interaction.customId.split('_')[1];
                 const channelId = interaction.fields.getTextInputValue('channelid');
+                const roleId = interaction.fields.getTextInputValue('roleid') || null;
 
                 try {
                     const targetChannel = await client.channels.fetch(channelId);
@@ -241,8 +250,10 @@ export default {
                         });
                     }
 
-                    // Send to target channel
+                    // Send to target channel with role mention if provided
+                    const messageContent = roleId ? `<@&${roleId}>` : '';
                     await targetChannel.send({
+                        content: messageContent,
                         components: originalMessage.components,
                         flags: MessageFlags.IsComponentsV2
                     });
