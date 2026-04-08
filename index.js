@@ -19,7 +19,6 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildVoiceStates, // Required for music
     ],
-    allowedMentions: { parse: [], repliedUser: false },
 });
 
 // Initialize commands collection

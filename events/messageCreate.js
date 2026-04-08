@@ -62,7 +62,8 @@ export default {
                 if (missingPerms.length > 0) {
                     return message.reply({
                         content: `❌ I need the following permissions: ${missingPerms.join(', ')}`,
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
             }
@@ -76,7 +77,8 @@ export default {
                 if (missingPerms.length > 0) {
                     return message.reply({
                         content: `${config.cross_emoji} | You Need This \`${missingPerms.join(', ')}\` Permission to Use This Command!`,
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
             }
@@ -93,7 +95,8 @@ export default {
                         const timeLeft = ((expirationTime - now) / 1000).toFixed(1);
                         return message.reply({
                             content: `⏱ Please wait ${timeLeft}s before using this command again.`,
-                            flags: 64
+                            flags: 64,
+                            allowedMentions: { parse: [], repliedUser: false }
                         });
                     }
                 }
@@ -109,7 +112,8 @@ export default {
             console.error(`Error executing command ${command.name}:`, error);
             message.reply({
                 content: '❌ An error occurred while executing this command.',
-                flags: 64
+                flags: 64,
+                allowedMentions: { parse: [], repliedUser: false }
             }).catch(console.error);
         }
     },
@@ -187,12 +191,14 @@ async function handleBotMention(message, client) {
         return message.reply({
             components: [container],
             flags: MessageFlags.IsComponentsV2,
+            allowedMentions: { parse: [], repliedUser: false }
         });
     } catch (error) {
         console.error('Error in bot mention handler:', error);
         return message.reply({
             content: `Hey ${message.author.username}! My prefix is \`${config.prefix}\`\nType \`${config.prefix}help\` for all commands!`,
             flags: 64,
+            allowedMentions: { parse: [], repliedUser: false }
         });
     }
 }

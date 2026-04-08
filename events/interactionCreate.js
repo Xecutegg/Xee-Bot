@@ -15,7 +15,8 @@ export default {
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
                         content: 'This Button is only for Moderators! Please let the Management Team use it.\n\n **If you still want to press it, go ahead and press it hard and curse more!**',
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
 
@@ -27,7 +28,8 @@ export default {
                 if (!db) {
                     return interaction.reply({
                         content: '❌ No IDP setup found for this channel!',
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
 
@@ -61,7 +63,8 @@ export default {
                     if (!interaction.replied && !interaction.deferred) {
                         await interaction.reply({
                             content: '❌ Failed to show the modal. Please try again.',
-                            flags: 64
+                            flags: 64,
+                            allowedMentions: { parse: [], repliedUser: false }
                         });
                     }
                 }
@@ -74,7 +77,8 @@ export default {
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
                         content: 'This Button is only for Moderators! Please let the Management Team use it.\n\n **If you still want to press it, go ahead and press it hard and curse more!**',
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
 
@@ -109,7 +113,8 @@ export default {
                     if (!interaction.replied && !interaction.deferred) {
                         await interaction.reply({
                             content: '❌ Failed to show the modal. Please try again.',
-                            flags: 64
+                            flags: 64,
+                            allowedMentions: { parse: [], repliedUser: false }
                         });
                     }
                 }
@@ -132,7 +137,8 @@ export default {
                 if (!db) {
                     return interaction.editReply({
                         content: '❌ IDP setup not found!',
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
 
@@ -202,7 +208,8 @@ export default {
 
                 await interaction.editReply({
                     content: `${config.check_emoji} | IDP SEND KR DIYAA!`,
-                    flags: 64
+                    flags: 64,
+                    allowedMentions: { parse: [], repliedUser: false }
                 });
             }
 
@@ -213,7 +220,8 @@ export default {
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
                         content: 'This Button is only for Moderators! Please let the Management Team use it.\n\n **If you still want to press it, go ahead and press it hard and curse more!**',
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
 
@@ -229,14 +237,16 @@ export default {
                     if (!targetChannel) {
                         return interaction.editReply({
                             content: '❌ Channel not found or bot does not have access to it!',
-                            flags: 64
+                            flags: 64,
+                            allowedMentions: { parse: [], repliedUser: false }
                         });
                     }
 
                     if (!targetChannel.isTextBased()) {
                         return interaction.editReply({
                             content: '❌ That is not a text channel!',
-                            flags: 64
+                            flags: 64,
+                            allowedMentions: { parse: [], repliedUser: false }
                         });
                     }
 
@@ -246,7 +256,8 @@ export default {
                     if (!originalMessage) {
                         return interaction.editReply({
                             content: '❌ Original IDP message not found!',
-                            flags: 64
+                            flags: 64,
+                            allowedMentions: { parse: [], repliedUser: false }
                         });
                     }
 
@@ -316,7 +327,8 @@ export default {
 
                     await interaction.editReply({
                         content: `${config.check_emoji} | Done Bhai IDP Send Kr Diya Ab Mere Malik Ko Paise Dedo [Check kro](https://founder.onedreamesports.in)`,
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
 
                 } catch (error) {
@@ -324,7 +336,8 @@ export default {
                     console.error('Error details:', error.message);
                     await interaction.editReply({
                         content: `❌ Error: ${error.message}`,
-                        flags: 64
+                        flags: 64,
+                        allowedMentions: { parse: [], repliedUser: false }
                     });
                 }
             }
