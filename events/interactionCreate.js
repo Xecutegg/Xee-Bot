@@ -10,7 +10,7 @@ export default {
             if (interaction.customId === 'sendidp') {
                 const hasAdmin = interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
                 const hasRequiredRole = interaction.member?.roles?.cache.has('1384526510064533535') ||
-                    interaction.member?.roles?.cache.has('1487115999710019594');
+                    interaction.member?.roles?.cache.has('1487115999710019594') || interaction.member?.roles?.cache.has('1419275730084434022');
 
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
@@ -72,7 +72,7 @@ export default {
 
             if (interaction.customId.startsWith('sendto_')) {
                 const hasAdmin = interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
-                const hasRequiredRole = interaction.member?.roles?.cache.has('1384526510064533535') || interaction.member?.roles?.cache.has('1487115999710019594');
+                const hasRequiredRole = interaction.member?.roles?.cache.has('1384526510064533535') || interaction.member?.roles?.cache.has('1487115999710019594') || interaction.member?.roles?.cache.has('1419275730084434022');
 
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
@@ -215,7 +215,7 @@ export default {
 
             if (interaction.customId.startsWith('sendtochannel_')) {
                 const hasAdmin = interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator);
-                const hasRequiredRole = interaction.member?.roles?.cache.has('1384526510064533535') || interaction.member?.roles?.cache.has('1487115999710019594');
+                const hasRequiredRole = interaction.member?.roles?.cache.has('1384526510064533535') || interaction.member?.roles?.cache.has('1487115999710019594') || interaction.member?.roles?.cache.has('1419275730084434022');
 
                 if (!hasAdmin && !hasRequiredRole) {
                     return interaction.reply({
