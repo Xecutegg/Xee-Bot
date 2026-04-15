@@ -12,6 +12,12 @@ const guildSchema = new Schema({
         channelId: { type: String, default: null }
     },
 
+    // Audit Log Settings
+    auditlog: {
+        enabled: { type: Boolean, default: false },
+        channelId: { type: String, default: null }
+    },
+
     // Warning Settings
     warnings: {
         maxWarnings: { type: Number, default: 3 },
@@ -46,6 +52,10 @@ export const getSettings = async (guildId) => {
                     enabled: false,
                     channelId: null
                 },
+                auditlog: {
+                    enabled: false,
+                    channelId: null
+                },
                 warnings: {
                     maxWarnings: 3,
                     actions: []
@@ -62,6 +72,7 @@ export const getSettings = async (guildId) => {
             prefix: null,
             isPremium: false,
             modlog: { enabled: false, channelId: null },
+            auditlog: { enabled: false, channelId: null },
             warnings: { maxWarnings: 3, actions: [] }
         };
     }

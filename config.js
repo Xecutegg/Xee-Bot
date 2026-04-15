@@ -81,12 +81,12 @@ export default {
         ENABLED: true,
         LAVALINK_NODES: [
             {
-                name: "Xeee",
-                password: "glace",
-                host: "de-01.strixnodes.com",
-                port: 2010,
-                secure: false
-            }
+                name: "pvt Lavalink v4 1",
+                password: "yuvrxj.apk",
+                host: "zac.hidencloud.com",
+                port: 24577,
+                secure: false,
+            },
         ],
         MAX_SEARCH_RESULTS: 10,
         DEFAULT_SOURCE: "ytsearch",
