@@ -81,10 +81,10 @@ export default {
         ENABLED: true,
         LAVALINK_NODES: [
             {
-                name: "pvt Lavalink v4 1",
-                password: "yuvrxj.apk",
-                host: "zac.hidencloud.com",
-                port: 24577,
+                name: "papa node",
+                password: "xecute.gg",
+                host: "72.60.118.139",
+                port: 2333,
                 secure: false,
             },
         ],
