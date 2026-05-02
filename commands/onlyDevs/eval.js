@@ -7,6 +7,7 @@ import {
   ButtonStyle,
 } from "discord.js";
 import { inspect } from "util";
+import config from '../../config.js';
 
 export default {
   name: "eval",
@@ -14,6 +15,10 @@ export default {
   category: "ONLYDEVS",
   description: "Evaluate JavaScript code.",
   async execute(client, message, args) {
+    if (!config.devs.includes(message.author.id)) {
+      return message.reply("You do not have permission to use this command.");
+    }
+
     const code = args.join(" ");
     if (!code) return message.reply("Please provide some code to evaluate.");
 

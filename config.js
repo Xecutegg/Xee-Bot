@@ -81,10 +81,10 @@ export default {
         ENABLED: true,
         LAVALINK_NODES: [
             {
-                name: "papa node",
+                name: "Pink Pusssyyy",
                 password: "xecute.gg",
-                host: "72.60.118.139",
-                port: 2333,
+                host: "45.13.236.245",
+                port: 26334,
                 secure: false,
             },
         ],
