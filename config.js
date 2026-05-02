@@ -1,6 +1,6 @@
 export default {
     prefix: ".",
-    devs: ["162213250719547392", "901388818194780230"],
+    devs: ["162213250719547392", ""],
     color: "Red",
     link: "https://founder.onedreamesports.in",
     SUPPORT_SERVER: "https://discord.gg/yebpgrwdBh",
