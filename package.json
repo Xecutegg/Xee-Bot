@@ -1,10 +1,10 @@
 {
-    "name": "elite-q-hu",
+    "name": "xee-bot",
     "version": "5.6.0",
     "description": "A multipurpose discord bot built using discord-js",
     "main": "index.js",
     "type": "module",
-    "author": "Kishan lal",
+    "author": "xecute.gg",
     "license": "MIT",
     "engines": {
         "node": ">=18.0.0"
